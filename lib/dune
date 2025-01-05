@@ -1,0 +1,28 @@
+(library
+ (public_name duckdb)
+ (name duckdb)
+ (libraries core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (ctypes
+  (external_library_name duckdb)
+  (deps
+   ../libduckdb/duckdb.h
+   ../libduckdb/libduckdb_static.a
+   ../libduckdb/libduckdb.so)
+  (build_flags_resolver
+   (vendored
+    (c_flags :standard "-I../libduckdb")
+    (c_library_flags :standard "-L./libduckdb" "-lduckdb")))
+  (headers
+   (include "duckdb.h"))
+  (type_description
+   (instance Types)
+   (functor Type_description))
+  (function_description
+   (concurrency unlocked)
+   (instance Functions)
+   (functor Function_description))
+  (generated_types Types_generated)
+  (generated_entry_point C)))
