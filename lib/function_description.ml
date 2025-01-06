@@ -13,4 +13,16 @@ module Functions (F : FOREIGN) = struct
   ;;
 
   let duckdb_close = foreign "duckdb_close" (ptr Types.duckdb_database @-> returning void)
+
+  let duckdb_connect =
+    foreign
+      "duckdb_connect"
+      (Types.duckdb_database
+       @-> ptr Types.duckdb_connection
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_disconnect =
+    foreign "duckdb_disconnect" (ptr Types.duckdb_connection @-> returning void)
+  ;;
 end
