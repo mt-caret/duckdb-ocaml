@@ -25,4 +25,13 @@ module Functions (F : FOREIGN) = struct
   let duckdb_disconnect =
     foreign "duckdb_disconnect" (ptr Types.duckdb_connection @-> returning void)
   ;;
+
+  let duckdb_query =
+    foreign
+      "duckdb_query"
+      (Types.duckdb_connection
+       @-> string
+       @-> ptr_opt Types.duckdb_result
+       @-> returning Types.duckdb_state)
+  ;;
 end
