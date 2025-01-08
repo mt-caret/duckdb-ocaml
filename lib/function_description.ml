@@ -34,4 +34,8 @@ module Functions (F : FOREIGN) = struct
        @-> ptr_opt Types.duckdb_result
        @-> returning Types.duckdb_state)
   ;;
+
+  let duckdb_destroy_result =
+    foreign "duckdb_destroy_result" (ptr Types.duckdb_result @-> returning void)
+  ;;
 end

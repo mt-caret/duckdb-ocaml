@@ -269,9 +269,30 @@ module Types (F : TYPE) = struct
       ]
   ;;
 
+  type duckdb_column
+
+  let duckdb_column : duckdb_column structure typ =
+    let struct_ = typedef (structure "_duckdb_column") "duckdb_column" in
+    let (_ : _ field) = field struct_ "deprecated_data" (ptr void) in
+    let (_ : _ field) = field struct_ "deprecated_nullmask" (ptr bool) in
+    let (_ : _ field) = field struct_ "deprecated_type" duckdb_type in
+    let (_ : _ field) = field struct_ "deprecated_name" (ptr char) in
+    let (_ : _ field) = field struct_ "internal_data" (ptr void) in
+    seal struct_;
+    struct_
+  ;;
+
   type duckdb_result
 
-  let duckdb_result : duckdb_result abstract typ =
-    abstract ~name:"duckdb_result" ~size:0 ~alignment:0
+  let duckdb_result : duckdb_result structure typ =
+    let struct_ = typedef (structure "_duckdb_result") "duckdb_result" in
+    let (_ : _ field) = field struct_ "deprecated_column_count" idx_t in
+    let (_ : _ field) = field struct_ "deprecated_row_count" idx_t in
+    let (_ : _ field) = field struct_ "deprecated_rows_changed" idx_t in
+    let (_ : _ field) = field struct_ "deprecated_columns" (ptr duckdb_column) in
+    let (_ : _ field) = field struct_ "deprecated_error_message" (ptr char) in
+    let (_ : _ field) = field struct_ "internal_data" (ptr void) in
+    seal struct_;
+    struct_
   ;;
 end

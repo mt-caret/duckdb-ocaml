@@ -24,17 +24,20 @@ let duckdb_connect db =
   | DuckDBError -> failwith "Failed to connect to database"
 ;;
 
+let duckdb_query conn query =
+  let duckdb_result = make Duckdb.duckdb_result in
+  let state = Duckdb.duckdb_query !@conn query (Some (addr duckdb_result)) in
+  Duckdb.duckdb_destroy_result (addr duckdb_result);
+  match state with
+  | DuckDBSuccess -> ()
+  | DuckDBError -> failwith "Query failed"
+;;
+
 let%expect_test "create and insert" =
   let db = duckdb_open ":memory:" in
   let conn = duckdb_connect db in
-  Duckdb.duckdb_query !@conn "CREATE TABLE test (id INTEGER, name TEXT)" None
-  |> [%sexp_of: Duckdb.duckdb_state]
-  |> print_s;
-  [%expect {| DuckDBSuccess |}];
-  Duckdb.duckdb_query !@conn "INSERT INTO test (id, name) VALUES (1, 'John')" None
-  |> [%sexp_of: Duckdb.duckdb_state]
-  |> print_s;
-  [%expect {| DuckDBSuccess |}];
+  duckdb_query conn "CREATE TABLE test (id INTEGER, name TEXT)";
+  duckdb_query conn "INSERT INTO test (id, name) VALUES (1, 'John')";
   Duckdb.duckdb_disconnect conn;
   Duckdb.duckdb_close db
 ;;
