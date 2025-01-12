@@ -38,4 +38,26 @@ module Functions (F : FOREIGN) = struct
   let duckdb_destroy_result =
     foreign "duckdb_destroy_result" (ptr Types.duckdb_result @-> returning void)
   ;;
+
+  let duckdb_fetch_chunk =
+    foreign
+      "duckdb_fetch_chunk"
+      (Types.duckdb_result @-> returning (ptr_opt Types.duckdb_data_chunk_struct))
+  ;;
+
+  let duckdb_data_chunk_get_size =
+    foreign
+      "duckdb_data_chunk_get_size"
+      (Types.duckdb_data_chunk @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_data_chunk_get_vector =
+    foreign
+      "duckdb_data_chunk_get_vector"
+      (Types.duckdb_data_chunk @-> Types.idx_t @-> returning Types.duckdb_vector)
+  ;;
+
+  let duckdb_destroy_data_chunk =
+    foreign "duckdb_destroy_data_chunk" (ptr Types.duckdb_data_chunk @-> returning void)
+  ;;
 end

@@ -295,4 +295,36 @@ module Types (F : TYPE) = struct
     seal struct_;
     struct_
   ;;
+
+  (* {[
+    //! Contains a data chunk from a duckdb_result.
+    //! Must be destroyed with `duckdb_destroy_data_chunk`.
+    typedef struct _duckdb_data_chunk {
+      void *internal_ptr;
+    } * duckdb_data_chunk;
+  ]} *)
+  type duckdb_data_chunk_struct
+  type duckdb_data_chunk = duckdb_data_chunk_struct structure ptr
+
+  let (duckdb_data_chunk_struct, duckdb_data_chunk)
+    : duckdb_data_chunk_struct structure typ * duckdb_data_chunk typ
+    =
+    duckdb_struct_type_and_typedef "duckdb_data_chunk"
+  ;;
+
+  (* {[
+    //! A vector to a specified column in a data chunk. Lives as long as the
+    //! data chunk lives, i.e., must not be destroyed.
+    typedef struct _duckdb_vector {
+      void *internal_ptr;
+    } * duckdb_vector;
+  ]}*)
+  type duckdb_vector_struct
+  type duckdb_vector = duckdb_vector_struct structure ptr
+
+  let (duckdb_vector_struct, duckdb_vector)
+    : duckdb_vector_struct structure typ * duckdb_vector typ
+    =
+    duckdb_struct_type_and_typedef "duckdb_vector"
+  ;;
 end
