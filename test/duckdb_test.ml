@@ -93,3 +93,19 @@ let%expect_test "create, insert, and select" =
   Duckdb.duckdb_disconnect conn;
   Duckdb.duckdb_close db
 ;;
+
+let%expect_test "get type and name" =
+  let db = duckdb_open ":memory:" in
+  let conn = duckdb_connect db in
+  duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
+  duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
+  duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+    let name = Duckdb.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
+    print_endline name;
+    [%expect {| i |}];
+    let type_ = Duckdb.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
+    print_s [%message (type_ : Duckdb.duckdb_type)];
+    [%expect {| (type_ DUCKDB_TYPE_INTEGER) |}]);
+  Duckdb.duckdb_disconnect conn;
+  Duckdb.duckdb_close db
+;;
