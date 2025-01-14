@@ -46,32 +46,19 @@ let duckdb_fetch_chunk res =
   |> Option.map ~f:(fun chunk -> allocate Duckdb.duckdb_data_chunk chunk)
 ;;
 
-let duckdb_data_chunk_get_vector chunk col_idx =
-  Duckdb.duckdb_data_chunk_get_vector !@chunk col_idx
+let duckdb_data_chunk_get_vector_uint32_t chunk col_idx ~row_count =
+  let vector = Duckdb.duckdb_data_chunk_get_vector !@chunk col_idx in
+  let data = Duckdb.duckdb_vector_get_data vector |> from_voidp uint32_t in
+  match Duckdb.duckdb_vector_get_validity vector with
+  | Some validity ->
+    Array.init row_count ~f:(fun i ->
+      match Duckdb.duckdb_validity_row_is_valid validity (Unsigned.UInt64.of_int i) with
+      | true -> Some !@(data +@ i)
+      | false -> None)
+  | None -> Array.init row_count ~f:(fun i -> Some !@(data +@ i))
 ;;
 
-let%expect_test "create and insert" =
-  let db = duckdb_open ":memory:" in
-  let conn = duckdb_connect db in
-  duckdb_query conn "CREATE TABLE test (id INTEGER, name TEXT)";
-  duckdb_query conn "INSERT INTO test (id, name) VALUES (1, 'John')";
-  Duckdb.duckdb_disconnect conn;
-  Duckdb.duckdb_close db
-;;
-
-(* {[
-  duckdb_database db;
-  duckdb_connection con;
-  duckdb_open(nullptr, &db);
-  duckdb_connect(db, &con);
-
-  duckdb_result res;
-  duckdb_query(con, "CREATE TABLE integers (i INTEGER, j INTEGER);", NULL);
-  duckdb_query(con, "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL);", NULL);
-  duckdb_query(con, "SELECT * FROM integers;", &res);
-]} *)
-
-let%expect_test "create and insert" =
+let%expect_test "create, insert, and select" =
   let db = duckdb_open ":memory:" in
   let conn = duckdb_connect db in
   duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
@@ -83,7 +70,24 @@ let%expect_test "create and insert" =
       let row_count = Duckdb.duckdb_data_chunk_get_size !@chunk in
       print_endline (Int.to_string (Unsigned.UInt64.to_int row_count));
       [%expect {| 3 |}];
-      let _vector = duckdb_data_chunk_get_vector chunk (Unsigned.UInt64.of_int 0) in
+      let vector =
+        duckdb_data_chunk_get_vector_uint32_t
+          chunk
+          (Unsigned.UInt64.of_int 0)
+          ~row_count:(Unsigned.UInt64.to_int row_count)
+        |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+      in
+      print_s [%message (vector : int option array)];
+      [%expect {| (vector ((3) (5) (7))) |}];
+      let vector =
+        duckdb_data_chunk_get_vector_uint32_t
+          chunk
+          (Unsigned.UInt64.of_int 1)
+          ~row_count:(Unsigned.UInt64.to_int row_count)
+        |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+      in
+      print_s [%message (vector : int option array)];
+      [%expect {| (vector ((4) (6) ())) |}];
       Duckdb.duckdb_destroy_data_chunk chunk
     | None -> ());
   Duckdb.duckdb_disconnect conn;

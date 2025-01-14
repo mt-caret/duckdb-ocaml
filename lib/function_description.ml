@@ -57,6 +57,22 @@ module Functions (F : FOREIGN) = struct
       (Types.duckdb_data_chunk @-> Types.idx_t @-> returning Types.duckdb_vector)
   ;;
 
+  let duckdb_vector_get_data =
+    foreign "duckdb_vector_get_data" (Types.duckdb_vector @-> returning (ptr void))
+  ;;
+
+  let duckdb_vector_get_validity =
+    foreign
+      "duckdb_vector_get_validity"
+      (Types.duckdb_vector @-> returning (ptr_opt uint64_t))
+  ;;
+
+  let duckdb_validity_row_is_valid =
+    foreign
+      "duckdb_validity_row_is_valid"
+      (ptr uint64_t @-> Types.idx_t @-> returning bool)
+  ;;
+
   let duckdb_destroy_data_chunk =
     foreign "duckdb_destroy_data_chunk" (ptr Types.duckdb_data_chunk @-> returning void)
   ;;
