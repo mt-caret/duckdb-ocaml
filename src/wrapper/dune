@@ -1,0 +1,7 @@
+(library
+ (public_name duckdb)
+ (name duckdb_wrapper)
+ (libraries core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

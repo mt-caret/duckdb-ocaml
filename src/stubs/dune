@@ -1,6 +1,6 @@
 (library
- (public_name duckdb)
- (name duckdb)
+ (public_name duckdb.stubs)
+ (name duckdb_stubs)
  (libraries core)
  (inline_tests)
  (preprocess
@@ -8,12 +8,12 @@
  (ctypes
   (external_library_name duckdb)
   (deps
-   ../libduckdb/duckdb.h
-   ../libduckdb/libduckdb_static.a
-   ../libduckdb/libduckdb.so)
+   ../../libduckdb/duckdb.h
+   ../../libduckdb/libduckdb_static.a
+   ../../libduckdb/libduckdb.so)
   (build_flags_resolver
    (vendored
-    (c_flags :standard "-I../libduckdb")
+    (c_flags :standard "-I../../libduckdb")
     (c_library_flags :standard "-L./libduckdb" "-lduckdb")))
   (headers
    (include "duckdb.h"))
