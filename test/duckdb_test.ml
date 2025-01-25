@@ -6,11 +6,6 @@ let%expect_test "duckdb_library_version" =
   [%expect {| v1.1.3 |}]
 ;;
 
-let duckdb_fetch_chunk res =
-  Duckdb_stubs.duckdb_fetch_chunk res
-  |> Option.map ~f:(fun chunk -> allocate Duckdb_stubs.duckdb_data_chunk chunk)
-;;
-
 let duckdb_data_chunk_get_vector_uint32_t chunk col_idx ~row_count =
   let vector = Duckdb_stubs.duckdb_data_chunk_get_vector !@chunk col_idx in
   let data = Duckdb_stubs.duckdb_vector_get_data vector |> from_voidp uint32_t in
@@ -31,33 +26,32 @@ let%expect_test "create, insert, and select" =
       Duckdb.Query.run' conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
       Duckdb.Query.run' conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
       Duckdb.Query.run conn "SELECT * FROM integers" ~f:(fun res ->
-        let res = Duckdb.Query.Result.Private.to_struct res in
-        let chunk = duckdb_fetch_chunk res in
-        match chunk with
-        | Some chunk ->
-          let row_count = Duckdb_stubs.duckdb_data_chunk_get_size !@chunk in
-          print_endline (Int.to_string (Unsigned.UInt64.to_int row_count));
-          [%expect {| 3 |}];
-          let vector =
-            duckdb_data_chunk_get_vector_uint32_t
-              chunk
-              (Unsigned.UInt64.of_int 0)
-              ~row_count:(Unsigned.UInt64.to_int row_count)
-            |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
-          in
-          print_s [%message (vector : int option array)];
-          [%expect {| (vector ((3) (5) (7))) |}];
-          let vector =
-            duckdb_data_chunk_get_vector_uint32_t
-              chunk
-              (Unsigned.UInt64.of_int 1)
-              ~row_count:(Unsigned.UInt64.to_int row_count)
-            |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
-          in
-          print_s [%message (vector : int option array)];
-          [%expect {| (vector ((4) (6) ())) |}];
-          Duckdb_stubs.duckdb_destroy_data_chunk chunk
-        | None -> ())))
+        Duckdb.Data_chunk.fetch
+          res
+          ~f:
+            (Option.iter ~f:(fun chunk ->
+               let row_count = Duckdb.Data_chunk.length chunk in
+               print_endline (Int.to_string row_count);
+               [%expect {| 3 |}];
+               let chunk = Duckdb.Data_chunk.Private.to_ptr chunk in
+               let vector =
+                 duckdb_data_chunk_get_vector_uint32_t
+                   chunk
+                   (Unsigned.UInt64.of_int 0)
+                   ~row_count
+                 |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+               in
+               print_s [%message (vector : int option array)];
+               [%expect {| (vector ((3) (5) (7))) |}];
+               let vector =
+                 duckdb_data_chunk_get_vector_uint32_t
+                   chunk
+                   (Unsigned.UInt64.of_int 1)
+                   ~row_count
+                 |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+               in
+               print_s [%message (vector : int option array)];
+               [%expect {| (vector ((4) (6) ())) |}])))))
 ;;
 
 let%expect_test "get type and name" =

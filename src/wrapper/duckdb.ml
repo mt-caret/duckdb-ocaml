@@ -101,6 +101,39 @@ end = struct
   let run' conn query = run conn query ~f:ignore
 end
 
+module Data_chunk : sig
+  type t
+
+  val fetch : Query.Result.t -> f:(t option -> 'a) -> 'a
+  val length : t -> int
+
+  module Private : sig
+    val to_ptr : t -> Duckdb_stubs.duckdb_data_chunk ptr
+  end
+end = struct
+  type t = Duckdb_stubs.duckdb_data_chunk ptr
+
+  let fetch query_result ~f =
+    match
+      Duckdb_stubs.duckdb_fetch_chunk (Query.Result.Private.to_struct query_result)
+    with
+    | None -> f None
+    | Some chunk ->
+      let chunk = allocate Duckdb_stubs.duckdb_data_chunk chunk in
+      protect
+        ~f:(fun () -> f (Some chunk))
+        ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
+  ;;
+
+  let length chunk =
+    Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
+  ;;
+
+  module Private = struct
+    let to_ptr = Fn.id
+  end
+end
+
 module Type = struct
   type t =
     | Boolean
