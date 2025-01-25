@@ -66,6 +66,41 @@ end = struct
   end
 end
 
+module Query : sig
+  module Result : sig
+    type t
+
+    module Private : sig
+      val to_struct : t -> Duckdb_stubs.duckdb_result structure
+    end
+  end
+
+  val run : Connection.t -> string -> f:(Result.t -> 'a) -> 'a
+  val run' : Connection.t -> string -> unit
+end = struct
+  module Result = struct
+    type t = Duckdb_stubs.duckdb_result structure
+
+    module Private = struct
+      let to_struct = Fn.id
+    end
+  end
+
+  let run conn query ~f =
+    let conn = Connection.Private.to_ptr conn in
+    let duckdb_result = make Duckdb_stubs.duckdb_result in
+    match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
+    | DuckDBError ->
+      Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
+      failwith "Query failed"
+    | DuckDBSuccess ->
+      protectx duckdb_result ~f ~finally:(fun duckdb_result ->
+        Duckdb_stubs.duckdb_destroy_result (addr duckdb_result))
+  ;;
+
+  let run' conn query = run conn query ~f:ignore
+end
+
 module Type = struct
   type t =
     | Boolean

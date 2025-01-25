@@ -6,23 +6,6 @@ let%expect_test "duckdb_library_version" =
   [%expect {| v1.1.3 |}]
 ;;
 
-let duckdb_query ?f conn query =
-  let duckdb_result = make Duckdb_stubs.duckdb_result in
-  let state = Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) in
-  match state with
-  | DuckDBError ->
-    Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
-    failwith "Query failed"
-  | DuckDBSuccess ->
-    (match f with
-     | Some f ->
-       (try f duckdb_result with
-        | e ->
-          Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
-          raise e)
-     | None -> Duckdb_stubs.duckdb_destroy_result (addr duckdb_result))
-;;
-
 let duckdb_fetch_chunk res =
   Duckdb_stubs.duckdb_fetch_chunk res
   |> Option.map ~f:(fun chunk -> allocate Duckdb_stubs.duckdb_data_chunk chunk)
@@ -45,10 +28,10 @@ let duckdb_data_chunk_get_vector_uint32_t chunk col_idx ~row_count =
 let%expect_test "create, insert, and select" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      let conn = Duckdb.Connection.Private.to_ptr conn in
-      duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
-      duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
-      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+      Duckdb.Query.run' conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
+      Duckdb.Query.run' conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
+      Duckdb.Query.run conn "SELECT * FROM integers" ~f:(fun res ->
+        let res = Duckdb.Query.Result.Private.to_struct res in
         let chunk = duckdb_fetch_chunk res in
         match chunk with
         | Some chunk ->
@@ -80,10 +63,10 @@ let%expect_test "create, insert, and select" =
 let%expect_test "get type and name" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      let conn = Duckdb.Connection.Private.to_ptr conn in
-      duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
-      duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
-      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+      Duckdb.Query.run' conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
+      Duckdb.Query.run' conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
+      Duckdb.Query.run conn "SELECT * FROM integers" ~f:(fun res ->
+        let res = Duckdb.Query.Result.Private.to_struct res in
         let name =
           Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
         in
@@ -99,10 +82,10 @@ let%expect_test "get type and name" =
 let%expect_test "logical types" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      let conn = Duckdb.Connection.Private.to_ptr conn in
-      duckdb_query conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
-      duckdb_query conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
-      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+      Duckdb.Query.run' conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
+      Duckdb.Query.run' conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
+      Duckdb.Query.run conn "SELECT * FROM integers" ~f:(fun res ->
+        let res = Duckdb.Query.Result.Private.to_struct res in
         let name =
           Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
         in
@@ -142,12 +125,12 @@ let%expect_test "logical types" =
 let%expect_test "nested logical types" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      let conn = Duckdb.Connection.Private.to_ptr conn in
-      duckdb_query
+      Duckdb.Query.run
         conn
         "SELECT {'birds': ['duck', 'goose', 'heron'], 'aliens': NULL, 'amphibians': \
          ['frog', 'toad']}"
         ~f:(fun res ->
+          let res = Duckdb.Query.Result.Private.to_struct res in
           let name =
             Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
           in
