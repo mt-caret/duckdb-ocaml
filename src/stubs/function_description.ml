@@ -5,6 +5,7 @@ module Functions (F : FOREIGN) = struct
   open! F
 
   let duckdb_library_version = foreign "duckdb_library_version" (void @-> returning string)
+  let duckdb_free = foreign "duckdb_free" (ptr void @-> returning void)
 
   let duckdb_open =
     foreign
@@ -57,6 +58,12 @@ module Functions (F : FOREIGN) = struct
       (ptr Types.duckdb_result @-> Types.idx_t @-> returning Types.duckdb_type)
   ;;
 
+  let duckdb_column_logical_type =
+    foreign
+      "duckdb_column_logical_type"
+      (ptr Types.duckdb_result @-> Types.idx_t @-> returning Types.duckdb_logical_type)
+  ;;
+
   let duckdb_data_chunk_get_size =
     foreign
       "duckdb_data_chunk_get_size"
@@ -87,5 +94,83 @@ module Functions (F : FOREIGN) = struct
 
   let duckdb_destroy_data_chunk =
     foreign "duckdb_destroy_data_chunk" (ptr Types.duckdb_data_chunk @-> returning void)
+  ;;
+
+  let duckdb_get_type_id =
+    foreign
+      "duckdb_get_type_id"
+      (Types.duckdb_logical_type @-> returning Types.duckdb_type)
+  ;;
+
+  let duckdb_list_type_child_type =
+    foreign
+      "duckdb_list_type_child_type"
+      (Types.duckdb_logical_type @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_array_type_child_type =
+    foreign
+      "duckdb_array_type_child_type"
+      (Types.duckdb_logical_type @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_array_type_array_size =
+    foreign
+      "duckdb_array_type_array_size"
+      (Types.duckdb_logical_type @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_map_type_key_type =
+    foreign
+      "duckdb_map_type_key_type"
+      (Types.duckdb_logical_type @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_map_type_value_type =
+    foreign
+      "duckdb_map_type_value_type"
+      (Types.duckdb_logical_type @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_struct_type_child_count =
+    foreign
+      "duckdb_struct_type_child_count"
+      (Types.duckdb_logical_type @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_struct_type_child_name =
+    foreign
+      "duckdb_struct_type_child_name"
+      (Types.duckdb_logical_type @-> Types.idx_t @-> returning (ptr char))
+  ;;
+
+  let duckdb_struct_type_child_type =
+    foreign
+      "duckdb_struct_type_child_type"
+      (Types.duckdb_logical_type @-> Types.idx_t @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_union_type_member_count =
+    foreign
+      "duckdb_union_type_member_count"
+      (Types.duckdb_logical_type @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_union_type_member_name =
+    foreign
+      "duckdb_union_type_member_name"
+      (Types.duckdb_logical_type @-> Types.idx_t @-> returning (ptr char))
+  ;;
+
+  let duckdb_union_type_member_type =
+    foreign
+      "duckdb_union_type_member_type"
+      (Types.duckdb_logical_type @-> Types.idx_t @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_destroy_logical_type =
+    foreign
+      "duckdb_destroy_logical_type"
+      (ptr Types.duckdb_logical_type @-> returning void)
   ;;
 end

@@ -185,7 +185,7 @@ module Types (F : TYPE) = struct
     | DUCKDB_TYPE_ANY
     | DUCKDB_TYPE_VARINT
     | DUCKDB_TYPE_SQLNULL
-  [@@deriving sexp]
+  [@@deriving sexp, variants]
 
   let duckdb_type_invalid = constant "DUCKDB_TYPE_INVALID" int64_t
   let duckdb_type_boolean = constant "DUCKDB_TYPE_BOOLEAN" int64_t
@@ -326,5 +326,21 @@ module Types (F : TYPE) = struct
     : duckdb_vector_struct structure typ * duckdb_vector typ
     =
     duckdb_struct_type_and_typedef "duckdb_vector"
+  ;;
+
+  (* {[
+    //! Holds an internal logical type.
+    //! Must be destroyed with `duckdb_destroy_logical_type`.
+    typedef struct _duckdb_logical_type {
+      void *internal_ptr;
+    } * duckdb_logical_type;
+  ]} *)
+  type duckdb_logical_type_struct
+  type duckdb_logical_type = duckdb_logical_type_struct structure ptr
+
+  let (duckdb_logical_type_struct, duckdb_logical_type)
+    : duckdb_logical_type_struct structure typ * duckdb_logical_type typ
+    =
+    duckdb_struct_type_and_typedef "duckdb_logical_type"
   ;;
 end

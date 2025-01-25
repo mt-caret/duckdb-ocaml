@@ -115,3 +115,70 @@ let%expect_test "get type and name" =
   Duckdb_stubs.duckdb_disconnect conn;
   Duckdb_stubs.duckdb_close db
 ;;
+
+let%expect_test "logical types" =
+  let db = duckdb_open ":memory:" in
+  let conn = duckdb_connect db in
+  duckdb_query conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
+  duckdb_query conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
+  duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+    let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
+    print_endline name;
+    [%expect {| i |}];
+    let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
+    print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+    [%expect {| (type_ DUCKDB_TYPE_LIST) |}];
+    (* TODO: currently the logical type leaks; clean up properly *)
+    let duckdb_type =
+      Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
+      |> Duckdb.Type.of_logical_type_exn
+    in
+    print_s [%message (duckdb_type : Duckdb.Type.t)];
+    [%expect {| (duckdb_type (List Integer)) |}];
+    let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 1) in
+    print_endline name;
+    [%expect {| j |}];
+    let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 1) in
+    print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+    [%expect {| (type_ DUCKDB_TYPE_ARRAY) |}];
+    (* TODO: currently the logical type leaks; clean up properly *)
+    let duckdb_type =
+      Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 1)
+      |> Duckdb.Type.of_logical_type_exn
+    in
+    print_s [%message (duckdb_type : Duckdb.Type.t)];
+    [%expect {| (duckdb_type (Array Integer 3)) |}]);
+  Duckdb_stubs.duckdb_disconnect conn;
+  Duckdb_stubs.duckdb_close db
+;;
+
+let%expect_test "nested logical types" =
+  let db = duckdb_open ":memory:" in
+  let conn = duckdb_connect db in
+  duckdb_query
+    conn
+    "SELECT {'birds': ['duck', 'goose', 'heron'], 'aliens': NULL, 'amphibians': ['frog', \
+     'toad']}"
+    ~f:(fun res ->
+      let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
+      print_endline name;
+      [%expect
+        {| main.struct_pack(birds := main.list_value('duck', 'goose', 'heron'), aliens := NULL, amphibians := main.list_value('frog', 'toad')) |}];
+      let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
+      print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+      [%expect {| (type_ DUCKDB_TYPE_STRUCT) |}];
+      (* TODO: currently the logical type leaks; clean up properly *)
+      let duckdb_type =
+        Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
+        |> Duckdb.Type.of_logical_type_exn
+      in
+      print_s [%message (duckdb_type : Duckdb.Type.t)];
+      [%expect
+        {|
+        (duckdb_type
+         (Struct
+          ((birds (List Var_char)) (aliens Integer) (amphibians (List Var_char)))))
+        |}]);
+  Duckdb_stubs.duckdb_disconnect conn;
+  Duckdb_stubs.duckdb_close db
+;;
