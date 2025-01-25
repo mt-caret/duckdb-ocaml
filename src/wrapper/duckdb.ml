@@ -198,6 +198,37 @@ module Type = struct
     | DUCKDB_TYPE_TIMESTAMP_TZ -> Timestamp_tz
     | DUCKDB_TYPE_VARINT -> Var_int
   ;;
+
+  module Typed = struct
+    (* TODO: add more types *)
+    type _ t =
+      | Boolean : bool t
+      | Tiny_int : int t
+      | Small_int : int t
+      | Integer : int32 t
+      | Big_int : int64 t
+      | U_tiny_int : Unsigned.uint8 t
+      | U_small_int : Unsigned.uint16 t
+      | U_integer : Unsigned.uint32 t
+      | U_big_int : Unsigned.uint64 t
+      | Float : float t
+      | Double : float t
+
+    let to_c_type (type a) (t : a t) : a Ctypes.typ =
+      match t with
+      | Boolean -> bool
+      | Tiny_int -> int8_t
+      | Small_int -> int16_t
+      | Integer -> int32_t
+      | Big_int -> int64_t
+      | U_tiny_int -> uint8_t
+      | U_small_int -> uint16_t
+      | U_integer -> uint32_t
+      | U_big_int -> uint64_t
+      | Float -> float
+      | Double -> double
+    ;;
+  end
 end
 
 module Query : sig
@@ -205,7 +236,7 @@ module Query : sig
     type t
 
     val column_count : t -> int
-    val schema : t -> (string * Type.t) list
+    val schema : t -> (string * Type.t) array
 
     module Private : sig
       val to_struct : t -> Duckdb_stubs.duckdb_result structure
@@ -216,26 +247,32 @@ module Query : sig
   val run' : Connection.t -> string -> unit
 end = struct
   module Result = struct
-    type t = Duckdb_stubs.duckdb_result structure
+    type t =
+      { result : Duckdb_stubs.duckdb_result structure
+      ; schema : (string * Type.t) array
+      }
+    [@@deriving fields ~getters]
 
-    let column_count t =
-      Duckdb_stubs.duckdb_column_count (addr t) |> Unsigned.UInt64.to_int
+    let create result =
+      let schema =
+        Duckdb_stubs.duckdb_column_count (addr result)
+        |> Unsigned.UInt64.to_int
+        |> Array.init ~f:(fun i ->
+          let i = Unsigned.UInt64.of_int i in
+          let name = Duckdb_stubs.duckdb_column_name (addr result) i in
+          let type_ =
+            Duckdb_stubs.duckdb_column_logical_type (addr result) i
+            |> with_logical_type ~f:Type.of_logical_type_exn
+          in
+          name, type_)
+      in
+      { result; schema }
     ;;
 
-    let schema t =
-      column_count t
-      |> List.init ~f:(fun i ->
-        let i = Unsigned.UInt64.of_int i in
-        let name = Duckdb_stubs.duckdb_column_name (addr t) i in
-        let type_ =
-          Duckdb_stubs.duckdb_column_logical_type (addr t) i
-          |> with_logical_type ~f:Type.of_logical_type_exn
-        in
-        name, type_)
-    ;;
+    let column_count t = Array.length t.schema
 
     module Private = struct
-      let to_struct = Fn.id
+      let to_struct t = t.result
     end
   end
 
@@ -247,8 +284,9 @@ end = struct
       Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
       failwith "Query failed"
     | DuckDBSuccess ->
-      protectx duckdb_result ~f ~finally:(fun duckdb_result ->
-        Duckdb_stubs.duckdb_destroy_result (addr duckdb_result))
+      let result = Result.create duckdb_result in
+      protectx result ~f ~finally:(fun result ->
+        Duckdb_stubs.duckdb_destroy_result (addr result.result))
   ;;
 
   let run' conn query = run conn query ~f:ignore
@@ -259,12 +297,20 @@ module Data_chunk : sig
 
   val fetch : Query.Result.t -> f:(t option -> 'a) -> 'a
   val length : t -> int
+  val schema : t -> (string * Type.t) array
+  val get_exn : t -> 'a Type.Typed.t -> int -> 'a array
+  val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 
   module Private : sig
     val to_ptr : t -> Duckdb_stubs.duckdb_data_chunk ptr
   end
 end = struct
-  type t = Duckdb_stubs.duckdb_data_chunk ptr
+  type t =
+    { data_chunk : Duckdb_stubs.duckdb_data_chunk ptr
+    ; length : int
+    ; schema : (string * Type.t) array
+    }
+  [@@deriving fields ~getters]
 
   let fetch query_result ~f =
     match
@@ -273,16 +319,76 @@ end = struct
     | None -> f None
     | Some chunk ->
       let chunk = allocate Duckdb_stubs.duckdb_data_chunk chunk in
+      let length =
+        Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
+      in
       protect
-        ~f:(fun () -> f (Some chunk))
+        ~f:(fun () ->
+          f
+            (Some
+               { data_chunk = chunk; length; schema = Query.Result.schema query_result }))
         ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
   ;;
 
-  let length chunk =
-    Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
+  let assert_all_valid vector ~len =
+    match Duckdb_stubs.duckdb_vector_get_validity vector with
+    | None -> ()
+    | Some validity ->
+      (match len with
+       | 0 -> ()
+       | len ->
+         let all_bits_set =
+           Unsigned.UInt64.sub
+             (Unsigned.UInt64.shift_left Unsigned.UInt64.one len)
+             Unsigned.UInt64.one
+         in
+         if not Unsigned.UInt64.(equal (logand all_bits_set !@validity) all_bits_set)
+         then
+           raise_s
+             [%message
+               "Not all rows are valid"
+                 ~validity:(Unsigned.UInt64.to_int !@validity : int)])
+  ;;
+
+  let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
+    (* TODO: should check that type lines up with schema *)
+    let vector =
+      Duckdb_stubs.duckdb_data_chunk_get_vector
+        !@(t.data_chunk)
+        (Unsigned.UInt64.of_int idx)
+    in
+    assert_all_valid vector ~len:t.length;
+    let data =
+      Duckdb_stubs.duckdb_vector_get_data vector
+      |> from_voidp (Type.Typed.to_c_type type_)
+    in
+    Array.init t.length ~f:(fun i -> !@(data +@ i))
+  ;;
+
+  let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
+    (* TODO: should check that type lines up with schema *)
+    let vector =
+      Duckdb_stubs.duckdb_data_chunk_get_vector
+        !@(t.data_chunk)
+        (Unsigned.UInt64.of_int idx)
+    in
+    let validity = Duckdb_stubs.duckdb_vector_get_validity vector in
+    let data =
+      Duckdb_stubs.duckdb_vector_get_data vector
+      |> from_voidp (Type.Typed.to_c_type type_)
+    in
+    match validity with
+    | None -> Array.init t.length ~f:(fun i -> Some !@(data +@ i))
+    | Some validity ->
+      Array.init t.length ~f:(fun i ->
+        match
+          Duckdb_stubs.duckdb_validity_row_is_valid validity (Unsigned.UInt64.of_int i)
+        with
+        | true -> Some !@(data +@ i)
+        | false -> None)
   ;;
 
   module Private = struct
-    let to_ptr = Fn.id
+    let to_ptr t = t.data_chunk
   end
 end
