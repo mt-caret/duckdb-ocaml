@@ -6,28 +6,6 @@ let%expect_test "duckdb_library_version" =
   [%expect {| v1.1.3 |}]
 ;;
 
-let duckdb_open path =
-  let db =
-    allocate
-      Duckdb_stubs.duckdb_database
-      (from_voidp Duckdb_stubs.duckdb_database_struct null)
-  in
-  match Duckdb_stubs.duckdb_open path db with
-  | DuckDBSuccess -> db
-  | DuckDBError -> failwith "Failed to open database"
-;;
-
-let duckdb_connect db =
-  let conn =
-    allocate
-      Duckdb_stubs.duckdb_connection
-      (from_voidp Duckdb_stubs.duckdb_connection_struct null)
-  in
-  match Duckdb_stubs.duckdb_connect !@db conn with
-  | DuckDBSuccess -> conn
-  | DuckDBError -> failwith "Failed to connect to database"
-;;
-
 let duckdb_query ?f conn query =
   let duckdb_result = make Duckdb_stubs.duckdb_result in
   let state = Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) in
@@ -65,120 +43,132 @@ let duckdb_data_chunk_get_vector_uint32_t chunk col_idx ~row_count =
 ;;
 
 let%expect_test "create, insert, and select" =
-  let db = duckdb_open ":memory:" in
-  let conn = duckdb_connect db in
-  duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
-  duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
-  duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
-    let chunk = duckdb_fetch_chunk res in
-    match chunk with
-    | Some chunk ->
-      let row_count = Duckdb_stubs.duckdb_data_chunk_get_size !@chunk in
-      print_endline (Int.to_string (Unsigned.UInt64.to_int row_count));
-      [%expect {| 3 |}];
-      let vector =
-        duckdb_data_chunk_get_vector_uint32_t
-          chunk
-          (Unsigned.UInt64.of_int 0)
-          ~row_count:(Unsigned.UInt64.to_int row_count)
-        |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
-      in
-      print_s [%message (vector : int option array)];
-      [%expect {| (vector ((3) (5) (7))) |}];
-      let vector =
-        duckdb_data_chunk_get_vector_uint32_t
-          chunk
-          (Unsigned.UInt64.of_int 1)
-          ~row_count:(Unsigned.UInt64.to_int row_count)
-        |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
-      in
-      print_s [%message (vector : int option array)];
-      [%expect {| (vector ((4) (6) ())) |}];
-      Duckdb_stubs.duckdb_destroy_data_chunk chunk
-    | None -> ());
-  Duckdb_stubs.duckdb_disconnect conn;
-  Duckdb_stubs.duckdb_close db
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let conn = Duckdb.Connection.Private.to_ptr conn in
+      duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
+      duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
+      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+        let chunk = duckdb_fetch_chunk res in
+        match chunk with
+        | Some chunk ->
+          let row_count = Duckdb_stubs.duckdb_data_chunk_get_size !@chunk in
+          print_endline (Int.to_string (Unsigned.UInt64.to_int row_count));
+          [%expect {| 3 |}];
+          let vector =
+            duckdb_data_chunk_get_vector_uint32_t
+              chunk
+              (Unsigned.UInt64.of_int 0)
+              ~row_count:(Unsigned.UInt64.to_int row_count)
+            |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+          in
+          print_s [%message (vector : int option array)];
+          [%expect {| (vector ((3) (5) (7))) |}];
+          let vector =
+            duckdb_data_chunk_get_vector_uint32_t
+              chunk
+              (Unsigned.UInt64.of_int 1)
+              ~row_count:(Unsigned.UInt64.to_int row_count)
+            |> Array.map ~f:(fun i -> Option.map ~f:Unsigned.UInt32.to_int i)
+          in
+          print_s [%message (vector : int option array)];
+          [%expect {| (vector ((4) (6) ())) |}];
+          Duckdb_stubs.duckdb_destroy_data_chunk chunk
+        | None -> ())))
 ;;
 
 let%expect_test "get type and name" =
-  let db = duckdb_open ":memory:" in
-  let conn = duckdb_connect db in
-  duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
-  duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
-  duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
-    let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
-    print_endline name;
-    [%expect {| i |}];
-    let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
-    print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
-    [%expect {| (type_ DUCKDB_TYPE_INTEGER) |}]);
-  Duckdb_stubs.duckdb_disconnect conn;
-  Duckdb_stubs.duckdb_close db
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let conn = Duckdb.Connection.Private.to_ptr conn in
+      duckdb_query conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
+      duckdb_query conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
+      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+        let name =
+          Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
+        in
+        print_endline name;
+        [%expect {| i |}];
+        let type_ =
+          Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0)
+        in
+        print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+        [%expect {| (type_ DUCKDB_TYPE_INTEGER) |}])))
 ;;
 
 let%expect_test "logical types" =
-  let db = duckdb_open ":memory:" in
-  let conn = duckdb_connect db in
-  duckdb_query conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
-  duckdb_query conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
-  duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
-    let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
-    print_endline name;
-    [%expect {| i |}];
-    let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
-    print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
-    [%expect {| (type_ DUCKDB_TYPE_LIST) |}];
-    (* TODO: currently the logical type leaks; clean up properly *)
-    let duckdb_type =
-      Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
-      |> Duckdb.Type.of_logical_type_exn
-    in
-    print_s [%message (duckdb_type : Duckdb.Type.t)];
-    [%expect {| (duckdb_type (List Integer)) |}];
-    let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 1) in
-    print_endline name;
-    [%expect {| j |}];
-    let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 1) in
-    print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
-    [%expect {| (type_ DUCKDB_TYPE_ARRAY) |}];
-    (* TODO: currently the logical type leaks; clean up properly *)
-    let duckdb_type =
-      Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 1)
-      |> Duckdb.Type.of_logical_type_exn
-    in
-    print_s [%message (duckdb_type : Duckdb.Type.t)];
-    [%expect {| (duckdb_type (Array Integer 3)) |}]);
-  Duckdb_stubs.duckdb_disconnect conn;
-  Duckdb_stubs.duckdb_close db
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let conn = Duckdb.Connection.Private.to_ptr conn in
+      duckdb_query conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
+      duckdb_query conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
+      duckdb_query conn "SELECT * FROM integers" ~f:(fun res ->
+        let name =
+          Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
+        in
+        print_endline name;
+        [%expect {| i |}];
+        let type_ =
+          Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0)
+        in
+        print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+        [%expect {| (type_ DUCKDB_TYPE_LIST) |}];
+        (* TODO: currently the logical type leaks; clean up properly *)
+        let duckdb_type =
+          Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
+          |> Duckdb.Type.of_logical_type_exn
+        in
+        print_s [%message (duckdb_type : Duckdb.Type.t)];
+        [%expect {| (duckdb_type (List Integer)) |}];
+        let name =
+          Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 1)
+        in
+        print_endline name;
+        [%expect {| j |}];
+        let type_ =
+          Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 1)
+        in
+        print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+        [%expect {| (type_ DUCKDB_TYPE_ARRAY) |}];
+        (* TODO: currently the logical type leaks; clean up properly *)
+        let duckdb_type =
+          Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 1)
+          |> Duckdb.Type.of_logical_type_exn
+        in
+        print_s [%message (duckdb_type : Duckdb.Type.t)];
+        [%expect {| (duckdb_type (Array Integer 3)) |}])))
 ;;
 
 let%expect_test "nested logical types" =
-  let db = duckdb_open ":memory:" in
-  let conn = duckdb_connect db in
-  duckdb_query
-    conn
-    "SELECT {'birds': ['duck', 'goose', 'heron'], 'aliens': NULL, 'amphibians': ['frog', \
-     'toad']}"
-    ~f:(fun res ->
-      let name = Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0) in
-      print_endline name;
-      [%expect
-        {| main.struct_pack(birds := main.list_value('duck', 'goose', 'heron'), aliens := NULL, amphibians := main.list_value('frog', 'toad')) |}];
-      let type_ = Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0) in
-      print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
-      [%expect {| (type_ DUCKDB_TYPE_STRUCT) |}];
-      (* TODO: currently the logical type leaks; clean up properly *)
-      let duckdb_type =
-        Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
-        |> Duckdb.Type.of_logical_type_exn
-      in
-      print_s [%message (duckdb_type : Duckdb.Type.t)];
-      [%expect
-        {|
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let conn = Duckdb.Connection.Private.to_ptr conn in
+      duckdb_query
+        conn
+        "SELECT {'birds': ['duck', 'goose', 'heron'], 'aliens': NULL, 'amphibians': \
+         ['frog', 'toad']}"
+        ~f:(fun res ->
+          let name =
+            Duckdb_stubs.duckdb_column_name (addr res) (Unsigned.UInt64.of_int 0)
+          in
+          print_endline name;
+          [%expect
+            {| main.struct_pack(birds := main.list_value('duck', 'goose', 'heron'), aliens := NULL, amphibians := main.list_value('frog', 'toad')) |}];
+          let type_ =
+            Duckdb_stubs.duckdb_column_type (addr res) (Unsigned.UInt64.of_int 0)
+          in
+          print_s [%message (type_ : Duckdb_stubs.duckdb_type)];
+          [%expect {| (type_ DUCKDB_TYPE_STRUCT) |}];
+          (* TODO: currently the logical type leaks; clean up properly *)
+          let duckdb_type =
+            Duckdb_stubs.duckdb_column_logical_type (addr res) (Unsigned.UInt64.of_int 0)
+            |> Duckdb.Type.of_logical_type_exn
+          in
+          print_s [%message (duckdb_type : Duckdb.Type.t)];
+          [%expect
+            {|
         (duckdb_type
          (Struct
           ((birds (List Var_char)) (aliens Integer) (amphibians (List Var_char)))))
-        |}]);
-  Duckdb_stubs.duckdb_disconnect conn;
-  Duckdb_stubs.duckdb_close db
+        |}])))
 ;;

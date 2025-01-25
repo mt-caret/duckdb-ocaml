@@ -1,6 +1,71 @@
 open! Core
 open! Ctypes
 
+module Database : sig
+  type t
+
+  val open_exn : string -> t
+  val close : t -> unit
+  val with_path : string -> f:(t -> 'a) -> 'a
+
+  module Private : sig
+    val to_ptr : t -> Duckdb_stubs.duckdb_database ptr
+  end
+end = struct
+  type t = Duckdb_stubs.duckdb_database ptr
+
+  let open_exn path =
+    let t =
+      allocate
+        Duckdb_stubs.duckdb_database
+        (from_voidp Duckdb_stubs.duckdb_database_struct null)
+    in
+    match Duckdb_stubs.duckdb_open path t with
+    | DuckDBSuccess -> t
+    | DuckDBError -> failwith "Failed to open database"
+  ;;
+
+  let close t = Duckdb_stubs.duckdb_close t
+  let with_path path ~f = open_exn path |> Exn.protectx ~f ~finally:close
+
+  module Private = struct
+    let to_ptr = Fn.id
+  end
+end
+
+module Connection : sig
+  type t
+
+  val connect_exn : Database.t -> t
+  val disconnect : t -> unit
+  val with_connection : Database.t -> f:(t -> 'a) -> 'a
+
+  module Private : sig
+    val to_ptr : t -> Duckdb_stubs.duckdb_connection ptr
+  end
+end = struct
+  type t = Duckdb_stubs.duckdb_connection ptr
+
+  let connect_exn db =
+    let db = Database.Private.to_ptr db in
+    let t =
+      allocate
+        Duckdb_stubs.duckdb_connection
+        (from_voidp Duckdb_stubs.duckdb_connection_struct null)
+    in
+    match Duckdb_stubs.duckdb_connect !@db t with
+    | DuckDBSuccess -> t
+    | DuckDBError -> failwith "Failed to connect to database"
+  ;;
+
+  let disconnect t = Duckdb_stubs.duckdb_disconnect t
+  let with_connection db ~f = connect_exn db |> Exn.protectx ~f ~finally:disconnect
+
+  module Private = struct
+    let to_ptr = Fn.id
+  end
+end
+
 module Type = struct
   type t =
     | Boolean
