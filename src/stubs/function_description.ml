@@ -64,6 +64,10 @@ module Functions (F : FOREIGN) = struct
       (ptr Types.duckdb_result @-> Types.idx_t @-> returning Types.duckdb_logical_type)
   ;;
 
+  let duckdb_column_count =
+    foreign "duckdb_column_count" (ptr Types.duckdb_result @-> returning Types.idx_t)
+  ;;
+
   let duckdb_data_chunk_get_size =
     foreign
       "duckdb_data_chunk_get_size"

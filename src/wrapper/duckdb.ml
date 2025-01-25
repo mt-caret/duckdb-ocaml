@@ -66,6 +66,17 @@ end = struct
   end
 end
 
+let with_logical_type logical_type ~f =
+  let ptr = allocate Duckdb_stubs.duckdb_logical_type logical_type in
+  match f !@ptr with
+  | exception exn ->
+    Duckdb_stubs.duckdb_destroy_logical_type ptr;
+    raise exn
+  | result ->
+    Duckdb_stubs.duckdb_destroy_logical_type ptr;
+    result
+;;
+
 module Type = struct
   type t =
     | Boolean
@@ -103,17 +114,6 @@ module Type = struct
     | Timestamp_tz
     | Var_int
   [@@deriving sexp]
-
-  let with_logical_type logical_type ~f =
-    let ptr = allocate Duckdb_stubs.duckdb_logical_type logical_type in
-    match f !@ptr with
-    | exception exn ->
-      Duckdb_stubs.duckdb_destroy_logical_type ptr;
-      raise exn
-    | result ->
-      Duckdb_stubs.duckdb_destroy_logical_type ptr;
-      result
-  ;;
 
   let rec of_logical_type_exn (logical_type : Duckdb_stubs.duckdb_logical_type) : t =
     match Duckdb_stubs.duckdb_get_type_id logical_type with
@@ -204,6 +204,9 @@ module Query : sig
   module Result : sig
     type t
 
+    val column_count : t -> int
+    val schema : t -> (string * Type.t) list
+
     module Private : sig
       val to_struct : t -> Duckdb_stubs.duckdb_result structure
     end
@@ -214,6 +217,22 @@ module Query : sig
 end = struct
   module Result = struct
     type t = Duckdb_stubs.duckdb_result structure
+
+    let column_count t =
+      Duckdb_stubs.duckdb_column_count (addr t) |> Unsigned.UInt64.to_int
+    ;;
+
+    let schema t =
+      column_count t
+      |> List.init ~f:(fun i ->
+        let i = Unsigned.UInt64.of_int i in
+        let name = Duckdb_stubs.duckdb_column_name (addr t) i in
+        let type_ =
+          Duckdb_stubs.duckdb_column_logical_type (addr t) i
+          |> with_logical_type ~f:Type.of_logical_type_exn
+        in
+        name, type_)
+    ;;
 
     module Private = struct
       let to_struct = Fn.id
