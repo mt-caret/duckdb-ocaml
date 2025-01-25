@@ -66,74 +66,6 @@ end = struct
   end
 end
 
-module Query : sig
-  module Result : sig
-    type t
-
-    module Private : sig
-      val to_struct : t -> Duckdb_stubs.duckdb_result structure
-    end
-  end
-
-  val run : Connection.t -> string -> f:(Result.t -> 'a) -> 'a
-  val run' : Connection.t -> string -> unit
-end = struct
-  module Result = struct
-    type t = Duckdb_stubs.duckdb_result structure
-
-    module Private = struct
-      let to_struct = Fn.id
-    end
-  end
-
-  let run conn query ~f =
-    let conn = Connection.Private.to_ptr conn in
-    let duckdb_result = make Duckdb_stubs.duckdb_result in
-    match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
-    | DuckDBError ->
-      Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
-      failwith "Query failed"
-    | DuckDBSuccess ->
-      protectx duckdb_result ~f ~finally:(fun duckdb_result ->
-        Duckdb_stubs.duckdb_destroy_result (addr duckdb_result))
-  ;;
-
-  let run' conn query = run conn query ~f:ignore
-end
-
-module Data_chunk : sig
-  type t
-
-  val fetch : Query.Result.t -> f:(t option -> 'a) -> 'a
-  val length : t -> int
-
-  module Private : sig
-    val to_ptr : t -> Duckdb_stubs.duckdb_data_chunk ptr
-  end
-end = struct
-  type t = Duckdb_stubs.duckdb_data_chunk ptr
-
-  let fetch query_result ~f =
-    match
-      Duckdb_stubs.duckdb_fetch_chunk (Query.Result.Private.to_struct query_result)
-    with
-    | None -> f None
-    | Some chunk ->
-      let chunk = allocate Duckdb_stubs.duckdb_data_chunk chunk in
-      protect
-        ~f:(fun () -> f (Some chunk))
-        ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
-  ;;
-
-  let length chunk =
-    Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
-  ;;
-
-  module Private = struct
-    let to_ptr = Fn.id
-  end
-end
-
 module Type = struct
   type t =
     | Boolean
@@ -266,4 +198,72 @@ module Type = struct
     | DUCKDB_TYPE_TIMESTAMP_TZ -> Timestamp_tz
     | DUCKDB_TYPE_VARINT -> Var_int
   ;;
+end
+
+module Query : sig
+  module Result : sig
+    type t
+
+    module Private : sig
+      val to_struct : t -> Duckdb_stubs.duckdb_result structure
+    end
+  end
+
+  val run : Connection.t -> string -> f:(Result.t -> 'a) -> 'a
+  val run' : Connection.t -> string -> unit
+end = struct
+  module Result = struct
+    type t = Duckdb_stubs.duckdb_result structure
+
+    module Private = struct
+      let to_struct = Fn.id
+    end
+  end
+
+  let run conn query ~f =
+    let conn = Connection.Private.to_ptr conn in
+    let duckdb_result = make Duckdb_stubs.duckdb_result in
+    match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
+    | DuckDBError ->
+      Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
+      failwith "Query failed"
+    | DuckDBSuccess ->
+      protectx duckdb_result ~f ~finally:(fun duckdb_result ->
+        Duckdb_stubs.duckdb_destroy_result (addr duckdb_result))
+  ;;
+
+  let run' conn query = run conn query ~f:ignore
+end
+
+module Data_chunk : sig
+  type t
+
+  val fetch : Query.Result.t -> f:(t option -> 'a) -> 'a
+  val length : t -> int
+
+  module Private : sig
+    val to_ptr : t -> Duckdb_stubs.duckdb_data_chunk ptr
+  end
+end = struct
+  type t = Duckdb_stubs.duckdb_data_chunk ptr
+
+  let fetch query_result ~f =
+    match
+      Duckdb_stubs.duckdb_fetch_chunk (Query.Result.Private.to_struct query_result)
+    with
+    | None -> f None
+    | Some chunk ->
+      let chunk = allocate Duckdb_stubs.duckdb_data_chunk chunk in
+      protect
+        ~f:(fun () -> f (Some chunk))
+        ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
+  ;;
+
+  let length chunk =
+    Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
+  ;;
+
+  module Private = struct
+    let to_ptr = Fn.id
+  end
 end
