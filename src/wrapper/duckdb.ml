@@ -232,6 +232,13 @@ module Type = struct
 end
 
 module Query : sig
+  module Error : sig
+    type t [@@deriving sexp]
+
+    val message : t -> string
+    val to_error : t -> Error.t
+  end
+
   module Result : sig
     type t
 
@@ -243,9 +250,21 @@ module Query : sig
     end
   end
 
-  val run : Connection.t -> string -> f:(Result.t -> 'a) -> 'a
-  val run' : Connection.t -> string -> unit
+  val run : Connection.t -> string -> f:(Result.t -> 'a) -> ('a, Error.t) result
+  val run' : Connection.t -> string -> (unit, Error.t) result
+  val run_exn : Connection.t -> string -> f:(Result.t -> 'a) -> 'a
+  val run_exn' : Connection.t -> string -> unit
 end = struct
+  module Error = struct
+    type t =
+      { kind : Duckdb_stubs.duckdb_error_type
+      ; message : string
+      }
+    [@@deriving sexp, fields ~getters]
+
+    let to_error t = Error.create_s [%sexp (t : t)]
+  end
+
   module Result = struct
     type t =
       { result : Duckdb_stubs.duckdb_result structure
@@ -281,15 +300,29 @@ end = struct
     let duckdb_result = make Duckdb_stubs.duckdb_result in
     match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
     | DuckDBError ->
+      let error : Error.t =
+        { kind = Duckdb_stubs.duckdb_result_error_type (addr duckdb_result)
+        ; message = Duckdb_stubs.duckdb_result_error (addr duckdb_result)
+        }
+      in
       Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
-      failwith "Query failed"
+      Error error
     | DuckDBSuccess ->
       let result = Result.create duckdb_result in
       protectx result ~f ~finally:(fun result ->
         Duckdb_stubs.duckdb_destroy_result (addr result.result))
+      |> Ok
   ;;
 
   let run' conn query = run conn query ~f:ignore
+
+  let run_exn conn query ~f =
+    run conn query ~f |> Core.Result.map_error ~f:Error.to_error |> ok_exn
+  ;;
+
+  let run_exn' conn query =
+    run' conn query |> Core.Result.map_error ~f:Error.to_error |> ok_exn
+  ;;
 end
 
 module Data_chunk : sig

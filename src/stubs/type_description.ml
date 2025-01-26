@@ -1,3 +1,4 @@
+open! Core
 open Ctypes
 
 module Types (F : TYPE) = struct
@@ -10,16 +11,12 @@ module Types (F : TYPE) = struct
   type duckdb_state =
     | DuckDBSuccess
     | DuckDBError
-  [@@deriving sexp]
-
-  let duckdb_success = constant "DuckDBSuccess" int64_t
-  let duckdb_error = constant "DuckDBError" int64_t
+  [@@deriving sexp, variants, enumerate]
 
   let duckdb_state =
-    enum
-      "duckdb_state"
-      ~typedef:true
-      [ DuckDBSuccess, duckdb_success; DuckDBError, duckdb_error ]
+    List.map all_of_duckdb_state ~f:(fun t ->
+      t, constant (Variants_of_duckdb_state.to_name t) int64_t)
+    |> enum "duckdb_state" ~typedef:true
   ;;
 
   (* TODO: I feel like we don't need to expose the struct type here. *)
@@ -185,88 +182,113 @@ module Types (F : TYPE) = struct
     | DUCKDB_TYPE_ANY
     | DUCKDB_TYPE_VARINT
     | DUCKDB_TYPE_SQLNULL
-  [@@deriving sexp, variants]
-
-  let duckdb_type_invalid = constant "DUCKDB_TYPE_INVALID" int64_t
-  let duckdb_type_boolean = constant "DUCKDB_TYPE_BOOLEAN" int64_t
-  let duckdb_type_tinyint = constant "DUCKDB_TYPE_TINYINT" int64_t
-  let duckdb_type_smallint = constant "DUCKDB_TYPE_SMALLINT" int64_t
-  let duckdb_type_integer = constant "DUCKDB_TYPE_INTEGER" int64_t
-  let duckdb_type_bigint = constant "DUCKDB_TYPE_BIGINT" int64_t
-  let duckdb_type_utinyint = constant "DUCKDB_TYPE_UTINYINT" int64_t
-  let duckdb_type_usmallint = constant "DUCKDB_TYPE_USMALLINT" int64_t
-  let duckdb_type_uinteger = constant "DUCKDB_TYPE_UINTEGER" int64_t
-  let duckdb_type_ubigint = constant "DUCKDB_TYPE_UBIGINT" int64_t
-  let duckdb_type_float = constant "DUCKDB_TYPE_FLOAT" int64_t
-  let duckdb_type_double = constant "DUCKDB_TYPE_DOUBLE" int64_t
-  let duckdb_type_timestamp = constant "DUCKDB_TYPE_TIMESTAMP" int64_t
-  let duckdb_type_date = constant "DUCKDB_TYPE_DATE" int64_t
-  let duckdb_type_time = constant "DUCKDB_TYPE_TIME" int64_t
-  let duckdb_type_interval = constant "DUCKDB_TYPE_INTERVAL" int64_t
-  let duckdb_type_hugeint = constant "DUCKDB_TYPE_HUGEINT" int64_t
-  let duckdb_type_uhugeint = constant "DUCKDB_TYPE_UHUGEINT" int64_t
-  let duckdb_type_varchar = constant "DUCKDB_TYPE_VARCHAR" int64_t
-  let duckdb_type_blob = constant "DUCKDB_TYPE_BLOB" int64_t
-  let duckdb_type_decimal = constant "DUCKDB_TYPE_DECIMAL" int64_t
-  let duckdb_type_timestamp_s = constant "DUCKDB_TYPE_TIMESTAMP_S" int64_t
-  let duckdb_type_timestamp_ms = constant "DUCKDB_TYPE_TIMESTAMP_MS" int64_t
-  let duckdb_type_timestamp_ns = constant "DUCKDB_TYPE_TIMESTAMP_NS" int64_t
-  let duckdb_type_enum = constant "DUCKDB_TYPE_ENUM" int64_t
-  let duckdb_type_list = constant "DUCKDB_TYPE_LIST" int64_t
-  let duckdb_type_struct = constant "DUCKDB_TYPE_STRUCT" int64_t
-  let duckdb_type_map = constant "DUCKDB_TYPE_MAP" int64_t
-  let duckdb_type_array = constant "DUCKDB_TYPE_ARRAY" int64_t
-  let duckdb_type_uuid = constant "DUCKDB_TYPE_UUID" int64_t
-  let duckdb_type_union = constant "DUCKDB_TYPE_UNION" int64_t
-  let duckdb_type_bit = constant "DUCKDB_TYPE_BIT" int64_t
-  let duckdb_type_time_tz = constant "DUCKDB_TYPE_TIME_TZ" int64_t
-  let duckdb_type_timestamp_tz = constant "DUCKDB_TYPE_TIMESTAMP_TZ" int64_t
-  let duckdb_type_any = constant "DUCKDB_TYPE_ANY" int64_t
-  let duckdb_type_varint = constant "DUCKDB_TYPE_VARINT" int64_t
-  let duckdb_type_sqlnull = constant "DUCKDB_TYPE_SQLNULL" int64_t
+  [@@deriving sexp, variants, enumerate]
 
   let duckdb_type =
-    enum
-      "duckdb_type"
-      ~typedef:true
-      [ DUCKDB_TYPE_INVALID, duckdb_type_invalid
-      ; DUCKDB_TYPE_BOOLEAN, duckdb_type_boolean
-      ; DUCKDB_TYPE_TINYINT, duckdb_type_tinyint
-      ; DUCKDB_TYPE_SMALLINT, duckdb_type_smallint
-      ; DUCKDB_TYPE_INTEGER, duckdb_type_integer
-      ; DUCKDB_TYPE_BIGINT, duckdb_type_bigint
-      ; DUCKDB_TYPE_UTINYINT, duckdb_type_utinyint
-      ; DUCKDB_TYPE_USMALLINT, duckdb_type_usmallint
-      ; DUCKDB_TYPE_UINTEGER, duckdb_type_uinteger
-      ; DUCKDB_TYPE_UBIGINT, duckdb_type_ubigint
-      ; DUCKDB_TYPE_FLOAT, duckdb_type_float
-      ; DUCKDB_TYPE_DOUBLE, duckdb_type_double
-      ; DUCKDB_TYPE_TIMESTAMP, duckdb_type_timestamp
-      ; DUCKDB_TYPE_DATE, duckdb_type_date
-      ; DUCKDB_TYPE_TIME, duckdb_type_time
-      ; DUCKDB_TYPE_INTERVAL, duckdb_type_interval
-      ; DUCKDB_TYPE_HUGEINT, duckdb_type_hugeint
-      ; DUCKDB_TYPE_UHUGEINT, duckdb_type_uhugeint
-      ; DUCKDB_TYPE_VARCHAR, duckdb_type_varchar
-      ; DUCKDB_TYPE_BLOB, duckdb_type_blob
-      ; DUCKDB_TYPE_DECIMAL, duckdb_type_decimal
-      ; DUCKDB_TYPE_TIMESTAMP_S, duckdb_type_timestamp_s
-      ; DUCKDB_TYPE_TIMESTAMP_MS, duckdb_type_timestamp_ms
-      ; DUCKDB_TYPE_TIMESTAMP_NS, duckdb_type_timestamp_ns
-      ; DUCKDB_TYPE_ENUM, duckdb_type_enum
-      ; DUCKDB_TYPE_LIST, duckdb_type_list
-      ; DUCKDB_TYPE_STRUCT, duckdb_type_struct
-      ; DUCKDB_TYPE_MAP, duckdb_type_map
-      ; DUCKDB_TYPE_ARRAY, duckdb_type_array
-      ; DUCKDB_TYPE_UUID, duckdb_type_uuid
-      ; DUCKDB_TYPE_UNION, duckdb_type_union
-      ; DUCKDB_TYPE_BIT, duckdb_type_bit
-      ; DUCKDB_TYPE_TIME_TZ, duckdb_type_time_tz
-      ; DUCKDB_TYPE_TIMESTAMP_TZ, duckdb_type_timestamp_tz
-      ; DUCKDB_TYPE_ANY, duckdb_type_any
-      ; DUCKDB_TYPE_VARINT, duckdb_type_varint
-      ; DUCKDB_TYPE_SQLNULL, duckdb_type_sqlnull
-      ]
+    List.map all_of_duckdb_type ~f:(fun t ->
+      t, constant (Variants_of_duckdb_type.to_name t) int64_t)
+    |> enum "duckdb_type" ~typedef:true
+  ;;
+
+  (* {[
+    //! An enum over DuckDB's different result types.
+    typedef enum duckdb_error_type {
+      DUCKDB_ERROR_INVALID = 0,
+      DUCKDB_ERROR_OUT_OF_RANGE = 1,
+      DUCKDB_ERROR_CONVERSION = 2,
+      DUCKDB_ERROR_UNKNOWN_TYPE = 3,
+      DUCKDB_ERROR_DECIMAL = 4,
+      DUCKDB_ERROR_MISMATCH_TYPE = 5,
+      DUCKDB_ERROR_DIVIDE_BY_ZERO = 6,
+      DUCKDB_ERROR_OBJECT_SIZE = 7,
+      DUCKDB_ERROR_INVALID_TYPE = 8,
+      DUCKDB_ERROR_SERIALIZATION = 9,
+      DUCKDB_ERROR_TRANSACTION = 10,
+      DUCKDB_ERROR_NOT_IMPLEMENTED = 11,
+      DUCKDB_ERROR_EXPRESSION = 12,
+      DUCKDB_ERROR_CATALOG = 13,
+      DUCKDB_ERROR_PARSER = 14,
+      DUCKDB_ERROR_PLANNER = 15,
+      DUCKDB_ERROR_SCHEDULER = 16,
+      DUCKDB_ERROR_EXECUTOR = 17,
+      DUCKDB_ERROR_CONSTRAINT = 18,
+      DUCKDB_ERROR_INDEX = 19,
+      DUCKDB_ERROR_STAT = 20,
+      DUCKDB_ERROR_CONNECTION = 21,
+      DUCKDB_ERROR_SYNTAX = 22,
+      DUCKDB_ERROR_SETTINGS = 23,
+      DUCKDB_ERROR_BINDER = 24,
+      DUCKDB_ERROR_NETWORK = 25,
+      DUCKDB_ERROR_OPTIMIZER = 26,
+      DUCKDB_ERROR_NULL_POINTER = 27,
+      DUCKDB_ERROR_IO = 28,
+      DUCKDB_ERROR_INTERRUPT = 29,
+      DUCKDB_ERROR_FATAL = 30,
+      DUCKDB_ERROR_INTERNAL = 31,
+      DUCKDB_ERROR_INVALID_INPUT = 32,
+      DUCKDB_ERROR_OUT_OF_MEMORY = 33,
+      DUCKDB_ERROR_PERMISSION = 34,
+      DUCKDB_ERROR_PARAMETER_NOT_RESOLVED = 35,
+      DUCKDB_ERROR_PARAMETER_NOT_ALLOWED = 36,
+      DUCKDB_ERROR_DEPENDENCY = 37,
+      DUCKDB_ERROR_HTTP = 38,
+      DUCKDB_ERROR_MISSING_EXTENSION = 39,
+      DUCKDB_ERROR_AUTOLOAD = 40,
+      DUCKDB_ERROR_SEQUENCE = 41,
+      DUCKDB_INVALID_CONFIGURATION = 42
+    } duckdb_error_type;
+  ]} *)
+
+  type duckdb_error_type =
+    | DUCKDB_ERROR_INVALID
+    | DUCKDB_ERROR_OUT_OF_RANGE
+    | DUCKDB_ERROR_CONVERSION
+    | DUCKDB_ERROR_UNKNOWN_TYPE
+    | DUCKDB_ERROR_DECIMAL
+    | DUCKDB_ERROR_MISMATCH_TYPE
+    | DUCKDB_ERROR_DIVIDE_BY_ZERO
+    | DUCKDB_ERROR_OBJECT_SIZE
+    | DUCKDB_ERROR_INVALID_TYPE
+    | DUCKDB_ERROR_SERIALIZATION
+    | DUCKDB_ERROR_TRANSACTION
+    | DUCKDB_ERROR_NOT_IMPLEMENTED
+    | DUCKDB_ERROR_EXPRESSION
+    | DUCKDB_ERROR_CATALOG
+    | DUCKDB_ERROR_PARSER
+    | DUCKDB_ERROR_PLANNER
+    | DUCKDB_ERROR_SCHEDULER
+    | DUCKDB_ERROR_EXECUTOR
+    | DUCKDB_ERROR_CONSTRAINT
+    | DUCKDB_ERROR_INDEX
+    | DUCKDB_ERROR_STAT
+    | DUCKDB_ERROR_CONNECTION
+    | DUCKDB_ERROR_SYNTAX
+    | DUCKDB_ERROR_SETTINGS
+    | DUCKDB_ERROR_BINDER
+    | DUCKDB_ERROR_NETWORK
+    | DUCKDB_ERROR_OPTIMIZER
+    | DUCKDB_ERROR_NULL_POINTER
+    | DUCKDB_ERROR_IO
+    | DUCKDB_ERROR_INTERRUPT
+    | DUCKDB_ERROR_FATAL
+    | DUCKDB_ERROR_INTERNAL
+    | DUCKDB_ERROR_INVALID_INPUT
+    | DUCKDB_ERROR_OUT_OF_MEMORY
+    | DUCKDB_ERROR_PERMISSION
+    | DUCKDB_ERROR_PARAMETER_NOT_RESOLVED
+    | DUCKDB_ERROR_PARAMETER_NOT_ALLOWED
+    | DUCKDB_ERROR_DEPENDENCY
+    | DUCKDB_ERROR_HTTP
+    | DUCKDB_ERROR_MISSING_EXTENSION
+    | DUCKDB_ERROR_AUTOLOAD
+    | DUCKDB_ERROR_SEQUENCE
+    | DUCKDB_INVALID_CONFIGURATION
+  [@@deriving sexp, variants, enumerate]
+
+  let duckdb_error_type =
+    List.map all_of_duckdb_error_type ~f:(fun t ->
+      t, constant (Variants_of_duckdb_error_type.to_name t) int64_t)
+    |> enum "duckdb_error_type" ~typedef:true
   ;;
 
   type duckdb_column
