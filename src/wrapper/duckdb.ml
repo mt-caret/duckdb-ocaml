@@ -5,14 +5,14 @@ module Database : sig
   type t
 
   val open_exn : string -> t
-  val close : t -> unit
+  val close : t -> here:Source_code_position.t -> unit
   val with_path : string -> f:(t -> 'a) -> 'a
 
   module Private : sig
-    val to_ptr : t -> Duckdb_stubs.duckdb_database ptr
+    val to_ptr : t -> Duckdb_stubs.duckdb_database ptr Resource.t
   end
 end = struct
-  type t = Duckdb_stubs.duckdb_database ptr
+  type t = Duckdb_stubs.duckdb_database ptr Resource.t
 
   let open_exn path =
     let t =
@@ -21,12 +21,13 @@ end = struct
         (from_voidp Duckdb_stubs.duckdb_database_struct null)
     in
     match Duckdb_stubs.duckdb_open path t with
-    | DuckDBSuccess -> t
+    | DuckDBSuccess ->
+      Resource.create t ~name:"Duckdb.Database" ~free:Duckdb_stubs.duckdb_close
     | DuckDBError -> failwith "Failed to open database"
   ;;
 
-  let close t = Duckdb_stubs.duckdb_close t
-  let with_path path ~f = open_exn path |> Exn.protectx ~f ~finally:close
+  let close = Resource.free
+  let with_path path ~f = open_exn path |> Exn.protectx ~f ~finally:(close ~here:[%here])
 
   module Private = struct
     let to_ptr = Fn.id
@@ -37,29 +38,33 @@ module Connection : sig
   type t
 
   val connect_exn : Database.t -> t
-  val disconnect : t -> unit
+  val disconnect : t -> here:Source_code_position.t -> unit
   val with_connection : Database.t -> f:(t -> 'a) -> 'a
 
   module Private : sig
-    val to_ptr : t -> Duckdb_stubs.duckdb_connection ptr
+    val to_ptr : t -> Duckdb_stubs.duckdb_connection ptr Resource.t
   end
 end = struct
-  type t = Duckdb_stubs.duckdb_connection ptr
+  type t = Duckdb_stubs.duckdb_connection ptr Resource.t
 
   let connect_exn db =
-    let db = Database.Private.to_ptr db in
+    let db = Database.Private.to_ptr db |> Resource.get_exn in
     let t =
       allocate
         Duckdb_stubs.duckdb_connection
         (from_voidp Duckdb_stubs.duckdb_connection_struct null)
     in
     match Duckdb_stubs.duckdb_connect !@db t with
-    | DuckDBSuccess -> t
+    | DuckDBSuccess ->
+      Resource.create t ~name:"Duckdb.Connection" ~free:Duckdb_stubs.duckdb_disconnect
     | DuckDBError -> failwith "Failed to connect to database"
   ;;
 
-  let disconnect t = Duckdb_stubs.duckdb_disconnect t
-  let with_connection db ~f = connect_exn db |> Exn.protectx ~f ~finally:disconnect
+  let disconnect = Resource.free
+
+  let with_connection db ~f =
+    connect_exn db |> Exn.protectx ~f ~finally:(disconnect ~here:[%here])
+  ;;
 
   module Private = struct
     let to_ptr = Fn.id
@@ -265,7 +270,7 @@ module Query : sig
     type t
 
     val create : Connection.t -> string -> (t, string) result
-    val destroy : t -> unit
+    val destroy : t -> here:Source_code_position.t -> unit
     val bind : t -> Parameters.t -> (unit, string) result
     val clear_bindings_exn : t -> unit
     val run : t -> f:(Result.t -> 'a) -> ('a, Error.t) result
@@ -315,7 +320,7 @@ end = struct
   end
 
   let run conn query ~f =
-    let conn = Connection.Private.to_ptr conn in
+    let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
     let duckdb_result = make Duckdb_stubs.duckdb_result in
     match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
     | DuckDBError ->
@@ -355,7 +360,7 @@ end = struct
       ;;
     end
 
-    type t = Duckdb_stubs.duckdb_prepared_statement ptr
+    type t = Duckdb_stubs.duckdb_prepared_statement ptr Resource.t
 
     let bind (type a) t index (type_ : a Type.Typed.t) (value : a) =
       let index = Unsigned.UInt64.of_int index in
@@ -373,17 +378,22 @@ end = struct
       | Double -> Duckdb_stubs.duckdb_bind_double !@t index value
     ;;
 
-    let destroy t = Duckdb_stubs.duckdb_destroy_prepare t
+    let destroy = Resource.free
 
     let create conn query =
-      let conn = Connection.Private.to_ptr conn in
+      let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
       let t =
         allocate
           Duckdb_stubs.duckdb_prepared_statement
           (from_voidp Duckdb_stubs.duckdb_prepared_statement_struct null)
       in
       match Duckdb_stubs.duckdb_prepare !@conn query t with
-      | DuckDBSuccess -> Ok t
+      | DuckDBSuccess ->
+        Ok
+          (Resource.create
+             t
+             ~name:"Duckdb.Prepared"
+             ~free:Duckdb_stubs.duckdb_destroy_prepare)
       | DuckDBError ->
         let error = Duckdb_stubs.duckdb_prepare_error !@t in
         Duckdb_stubs.duckdb_destroy_prepare t;
@@ -405,6 +415,7 @@ end = struct
              Error [%string "Failed to bind parameter at index %{index#Int}: %{error}"])
       in
       fun t (parameters : Parameters.t) ->
+        let t = Resource.get_exn t in
         let num_parameters = Duckdb_stubs.duckdb_nparams !@t |> Unsigned.UInt64.to_int in
         let actual_parameters = Parameters.length parameters in
         match num_parameters = actual_parameters with
@@ -416,6 +427,7 @@ end = struct
     ;;
 
     let clear_bindings_exn t =
+      let t = Resource.get_exn t in
       match Duckdb_stubs.duckdb_clear_bindings !@t with
       | DuckDBSuccess -> ()
       | DuckDBError ->
@@ -424,6 +436,7 @@ end = struct
     ;;
 
     let run t ~f =
+      let t = Resource.get_exn t in
       let duckdb_result = make Duckdb_stubs.duckdb_result in
       match Duckdb_stubs.duckdb_execute_prepared !@t (Some (addr duckdb_result)) with
       | DuckDBError ->

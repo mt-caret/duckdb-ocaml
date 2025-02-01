@@ -6,6 +6,32 @@ let%expect_test "duckdb_library_version" =
   [%expect {| v1.1.3 |}]
 ;;
 
+let%expect_test "try to use closed database" =
+  Expect_test_helpers_core.require_does_raise [%here] ~hide_positions:true (fun () ->
+    let db = Duckdb.Database.open_exn ":memory:" in
+    Duckdb.Database.close db ~here:[%here];
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Query.run_exn conn "SELECT 1" ~f:(fun res ->
+        Duckdb.Query.Result.schema res
+        |> [%sexp_of: (string * Duckdb.Type.t) array]
+        |> print_s)));
+  [%expect
+    {| ("Already freed" Duckdb.Database (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
+;;
+
+let%expect_test "try to use closed connection" =
+  Expect_test_helpers_core.require_does_raise [%here] ~hide_positions:true (fun () ->
+    let db = Duckdb.Database.open_exn ":memory:" in
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Connection.disconnect conn ~here:[%here];
+      Duckdb.Query.run_exn conn "SELECT 1" ~f:(fun res ->
+        Duckdb.Query.Result.schema res
+        |> [%sexp_of: (string * Duckdb.Type.t) array]
+        |> print_s)));
+  [%expect
+    {| ("Already freed" Duckdb.Connection (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
+;;
+
 let%expect_test "create, insert, and select" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
@@ -123,5 +149,22 @@ let%expect_test "prepared statements" =
         |> print_s;
         [%expect
           {| (("main.\"row\"(1, 2, 3)" (Struct (("" Integer) ("" Integer) ("" Integer))))) |}]);
-      Duckdb.Query.Prepared.destroy prepared))
+      Duckdb.Query.Prepared.destroy prepared ~here:[%here]))
+;;
+
+let%expect_test "try to use closed prepared statement" =
+  Expect_test_helpers_core.require_does_raise [%here] ~hide_positions:true (fun () ->
+    let db = Duckdb.Database.open_exn ":memory:" in
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let prepared =
+        Duckdb.Query.Prepared.create conn "SELECT (1, 2, 3) WHERE 1 = ?"
+        |> Result.ok_or_failwith
+      in
+      Duckdb.Query.Prepared.destroy prepared ~here:[%here];
+      Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
+        Duckdb.Query.Result.schema res
+        |> [%sexp_of: (string * Duckdb.Type.t) array]
+        |> print_s)));
+  [%expect
+    {| ("Already freed" Duckdb.Prepared (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
 ;;

@@ -1,6 +1,6 @@
 (library
  (name duckdb_test)
- (libraries core duckdb_stubs duckdb ctypes)
+ (libraries core duckdb_stubs duckdb ctypes expect_test_helpers_core)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
