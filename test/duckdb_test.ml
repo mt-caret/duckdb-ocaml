@@ -93,3 +93,35 @@ let%expect_test "query errors" =
            \n                      ^")))
         |}]))
 ;;
+
+let%expect_test "prepared statements" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let prepared =
+        Duckdb.Query.Prepared.create conn "SELECT (1, 2, 3) WHERE 1 = ?"
+        |> Result.ok_or_failwith
+      in
+      (* Query fails when no parameters are bound *)
+      Duckdb.Query.Prepared.run' prepared
+      |> [%sexp_of: (unit, Duckdb.Query.Error.t) result]
+      |> print_s;
+      [%expect
+        {|
+        (Error
+         ((kind DUCKDB_ERROR_INVALID_INPUT)
+          (message
+           "Invalid Input Error: Values were not provided for the following prepared statement parameters: 1")))
+        |}];
+      (* Query succeeds when parameters are bound *)
+      Duckdb.Query.Prepared.bind prepared [ Small_int, 1 ]
+      |> [%sexp_of: (unit, string) result]
+      |> print_s;
+      [%expect {| (Ok ()) |}];
+      Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
+        Duckdb.Query.Result.schema res
+        |> [%sexp_of: (string * Duckdb.Type.t) array]
+        |> print_s;
+        [%expect
+          {| (("main.\"row\"(1, 2, 3)" (Struct (("" Integer) ("" Integer) ("" Integer))))) |}]);
+      Duckdb.Query.Prepared.destroy prepared))
+;;

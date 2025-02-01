@@ -58,6 +58,22 @@ module Types (F : TYPE) = struct
   ;;
 
   (* {[
+    //! A prepared statement is a parameterized query that allows you to bind parameters to it.
+    //! Must be destroyed with `duckdb_destroy_prepare`.
+    typedef struct _duckdb_prepared_statement {
+      void *internal_ptr;
+    } * duckdb_prepared_statement;
+  ]} *)
+  type duckdb_prepared_statement_struct
+  type duckdb_prepared_statement = duckdb_prepared_statement_struct structure ptr
+
+  let (duckdb_prepared_statement_struct, duckdb_prepared_statement)
+    : duckdb_prepared_statement_struct structure typ * duckdb_prepared_statement typ
+    =
+    duckdb_struct_type_and_typedef "duckdb_prepared_statement"
+  ;;
+
+  (* {[
     //! DuckDB's index type.
     typedef uint64_t idx_t;
   ]} *)

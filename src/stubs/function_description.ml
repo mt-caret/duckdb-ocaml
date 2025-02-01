@@ -78,6 +78,160 @@ module Functions (F : FOREIGN) = struct
       (ptr Types.duckdb_result @-> returning Types.duckdb_error_type)
   ;;
 
+  let duckdb_prepare =
+    foreign
+      "duckdb_prepare"
+      (Types.duckdb_connection
+       @-> string
+       @-> ptr Types.duckdb_prepared_statement
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_destroy_prepare =
+    foreign
+      "duckdb_destroy_prepare"
+      (ptr Types.duckdb_prepared_statement @-> returning void)
+  ;;
+
+  let duckdb_prepare_error =
+    (* We can't use [string_opt] since the return type of the function is
+       [const char*] instead of [char*]. *)
+    foreign
+      "duckdb_prepare_error"
+      (Types.duckdb_prepared_statement @-> returning (ptr_opt (const char)))
+  ;;
+
+  let duckdb_nparams =
+    foreign "duckdb_nparams" (Types.duckdb_prepared_statement @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_parameter_name =
+    foreign
+      "duckdb_parameter_name"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> returning (ptr_opt (const char)))
+  ;;
+
+  let duckdb_param_type =
+    foreign
+      "duckdb_param_type"
+      (Types.duckdb_prepared_statement @-> Types.idx_t @-> returning Types.duckdb_type)
+  ;;
+
+  let duckdb_clear_bindings =
+    foreign
+      "duckdb_clear_bindings"
+      (Types.duckdb_prepared_statement @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_boolean =
+    foreign
+      "duckdb_bind_boolean"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> bool
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_int8 =
+    foreign
+      "duckdb_bind_int8"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> int8_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_int16 =
+    foreign
+      "duckdb_bind_int16"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> int16_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_int32 =
+    foreign
+      "duckdb_bind_int32"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> int32_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_int64 =
+    foreign
+      "duckdb_bind_int64"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> int64_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_uint8 =
+    foreign
+      "duckdb_bind_uint8"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> uint8_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_uint16 =
+    foreign
+      "duckdb_bind_uint16"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> uint16_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_uint32 =
+    foreign
+      "duckdb_bind_uint32"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> uint32_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_uint64 =
+    foreign
+      "duckdb_bind_uint64"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> uint64_t
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_float =
+    foreign
+      "duckdb_bind_float"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> float
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_bind_double =
+    foreign
+      "duckdb_bind_double"
+      (Types.duckdb_prepared_statement
+       @-> Types.idx_t
+       @-> double
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_execute_prepared =
+    foreign
+      "duckdb_execute_prepared"
+      (Types.duckdb_prepared_statement
+       @-> ptr_opt Types.duckdb_result
+       @-> returning Types.duckdb_state)
+  ;;
+
   let duckdb_data_chunk_get_size =
     foreign
       "duckdb_data_chunk_get_size"
