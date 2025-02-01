@@ -341,4 +341,120 @@ module Functions (F : FOREIGN) = struct
       "duckdb_destroy_logical_type"
       (ptr Types.duckdb_logical_type @-> returning void)
   ;;
+
+  let duckdb_appender_create =
+    foreign
+      "duckdb_appender_create"
+      (Types.duckdb_connection
+       @-> string_opt
+       @-> string
+       @-> ptr Types.duckdb_appender
+       @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_appender_column_count =
+    foreign
+      "duckdb_appender_column_count"
+      (Types.duckdb_appender @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_appender_column_type =
+    foreign
+      "duckdb_appender_column_type"
+      (Types.duckdb_appender @-> Types.idx_t @-> returning Types.duckdb_logical_type)
+  ;;
+
+  let duckdb_appender_error =
+    foreign "duckdb_appender_error" (Types.duckdb_appender @-> returning string_opt)
+  ;;
+
+  let duckdb_appender_flush =
+    foreign
+      "duckdb_appender_flush"
+      (Types.duckdb_appender @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_appender_close =
+    foreign
+      "duckdb_appender_close"
+      (Types.duckdb_appender @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_appender_destroy =
+    foreign
+      "duckdb_appender_destroy"
+      (ptr Types.duckdb_appender @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_appender_end_row =
+    foreign
+      "duckdb_appender_end_row"
+      (Types.duckdb_appender @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_bool =
+    foreign
+      "duckdb_append_bool"
+      (Types.duckdb_appender @-> bool @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_int8 =
+    foreign
+      "duckdb_append_int8"
+      (Types.duckdb_appender @-> int8_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_int16 =
+    foreign
+      "duckdb_append_int16"
+      (Types.duckdb_appender @-> int16_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_int32 =
+    foreign
+      "duckdb_append_int32"
+      (Types.duckdb_appender @-> int32_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_int64 =
+    foreign
+      "duckdb_append_int64"
+      (Types.duckdb_appender @-> int64_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_uint8 =
+    foreign
+      "duckdb_append_uint8"
+      (Types.duckdb_appender @-> uint8_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_uint16 =
+    foreign
+      "duckdb_append_uint16"
+      (Types.duckdb_appender @-> uint16_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_uint32 =
+    foreign
+      "duckdb_append_uint32"
+      (Types.duckdb_appender @-> uint32_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_uint64 =
+    foreign
+      "duckdb_append_uint64"
+      (Types.duckdb_appender @-> uint64_t @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_float =
+    foreign
+      "duckdb_append_float"
+      (Types.duckdb_appender @-> float @-> returning Types.duckdb_state)
+  ;;
+
+  let duckdb_append_double =
+    foreign
+      "duckdb_append_double"
+      (Types.duckdb_appender @-> double @-> returning Types.duckdb_state)
+  ;;
 end

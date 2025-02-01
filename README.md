@@ -11,7 +11,7 @@ TODO:
 - [ ] support conversion from and to OCaml types
 - [x] support insertion
 - [ ] PPX
-- [ ] bulk append API
+- [x] bulk append API
 - [ ] table functions
 - [ ] replacement scans
 - [ ] set up dune-based build of duckdb?

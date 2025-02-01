@@ -74,6 +74,22 @@ module Types (F : TYPE) = struct
   ;;
 
   (* {[
+    //! The appender enables fast data loading into DuckDB.
+    //! Must be destroyed with `duckdb_appender_destroy`.
+    typedef struct _duckdb_appender {
+      void *internal_ptr;
+    } * duckdb_appender;
+  ]} *)
+  type duckdb_appender_struct
+  type duckdb_appender = duckdb_appender_struct structure ptr
+
+  let (duckdb_appender_struct, duckdb_appender)
+    : duckdb_appender_struct structure typ * duckdb_appender typ
+    =
+    duckdb_struct_type_and_typedef "duckdb_appender"
+  ;;
+
+  (* {[
     //! DuckDB's index type.
     typedef uint64_t idx_t;
   ]} *)

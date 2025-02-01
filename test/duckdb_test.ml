@@ -168,3 +168,23 @@ let%expect_test "try to use closed prepared statement" =
   [%expect
     {| ("Already freed" Duckdb.Prepared (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
 ;;
+
+let%expect_test "appender" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Query.run_exn' conn "CREATE TABLE tbl (a SMALLINT, b BOOLEAN, c FLOAT)";
+      let appender = Duckdb.Appender.create conn "tbl" in
+      Duckdb.Appender.append_exn
+        appender
+        [ Small_int; Boolean; Float ]
+        [ [ 1; true; 0.5 ]; [ 2; false; 1.0 ]; [ 3; true; 1.5 ] ];
+      (* Pass wrong types *)
+      Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+        Duckdb.Appender.append_exn appender [ Small_int; Float ] [ [ 1; 0.5 ] ]);
+      [%expect
+        {|
+        ("Column types do not match"
+          (expected_types (Small_int Boolean Float))
+          (argument_types (Small_int Float)))
+        |}]))
+;;
