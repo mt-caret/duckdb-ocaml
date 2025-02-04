@@ -2,7 +2,7 @@ open! Core
 open! Ctypes
 
 type t =
-  { data_chunk : Duckdb_stubs.duckdb_data_chunk ptr
+  { data_chunk : Duckdb_stubs.Data_chunk.t ptr
   ; length : int
   ; schema : (string * Type.t) array
   }
@@ -12,7 +12,7 @@ let fetch query_result ~f =
   match Duckdb_stubs.duckdb_fetch_chunk (Query.Result.Private.to_struct query_result) with
   | None -> f None
   | Some chunk ->
-    let chunk = allocate Duckdb_stubs.duckdb_data_chunk chunk in
+    let chunk = allocate Duckdb_stubs.Data_chunk.t chunk in
     let length =
       Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
     in

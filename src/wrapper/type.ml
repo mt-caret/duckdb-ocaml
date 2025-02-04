@@ -39,7 +39,7 @@ type t =
 [@@deriving sexp, compare, equal]
 
 let with_logical_type logical_type ~f =
-  let ptr = allocate Duckdb_stubs.duckdb_logical_type logical_type in
+  let ptr = allocate Duckdb_stubs.Logical_type.t logical_type in
   match f !@ptr with
   | exception exn ->
     Duckdb_stubs.duckdb_destroy_logical_type ptr;
@@ -49,10 +49,10 @@ let with_logical_type logical_type ~f =
     result
 ;;
 
-let rec of_logical_type_exn (logical_type : Duckdb_stubs.duckdb_logical_type) : t =
+let rec of_logical_type_exn (logical_type : Duckdb_stubs.Logical_type.t) : t =
   match Duckdb_stubs.duckdb_get_type_id logical_type with
   | (DUCKDB_TYPE_INVALID | DUCKDB_TYPE_ANY | DUCKDB_TYPE_SQLNULL) as type_ ->
-    let type_name = Duckdb_stubs.Variants_of_duckdb_type.to_name type_ in
+    let type_name = Duckdb_stubs.Type.Variants.to_name type_ in
     failwith [%string "Unsupported type: %{type_name}"]
   | DUCKDB_TYPE_BOOLEAN -> Boolean
   | DUCKDB_TYPE_TINYINT -> Tiny_int

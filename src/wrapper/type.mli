@@ -37,7 +37,7 @@ type t =
   | Var_int
 [@@deriving sexp, compare, equal]
 
-val of_logical_type_exn : Duckdb_stubs.duckdb_logical_type -> t
+val of_logical_type_exn : Duckdb_stubs.Logical_type.t -> t
 
 module Typed : sig
   type untyped := t
@@ -71,7 +71,7 @@ end
 
 module Private : sig
   val with_logical_type
-    :  Duckdb_stubs.duckdb_logical_type
-    -> f:(Duckdb_stubs.duckdb_logical_type -> 'a)
+    :  Duckdb_stubs.Logical_type.t
+    -> f:(Duckdb_stubs.Logical_type.t -> 'a)
     -> 'a
 end

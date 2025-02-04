@@ -3,7 +3,7 @@ open! Ctypes
 
 module Error = struct
   type t =
-    { kind : Duckdb_stubs.duckdb_error_type
+    { kind : Duckdb_stubs.Error_type.t
     ; message : string
     }
   [@@deriving sexp, fields ~getters]
@@ -13,7 +13,7 @@ end
 
 module Result = struct
   type t =
-    { result : Duckdb_stubs.duckdb_result structure
+    { result : Duckdb_stubs.Result.t structure
     ; schema : (string * Type.t) array
     }
   [@@deriving fields ~getters]
@@ -43,7 +43,7 @@ end
 
 let run conn query ~f =
   let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
-  let duckdb_result = make Duckdb_stubs.duckdb_result in
+  let duckdb_result = make Duckdb_stubs.Result.t in
   match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
   | DuckDBError ->
     let error : Error.t =
@@ -82,7 +82,7 @@ module Prepared = struct
     ;;
   end
 
-  type t = Duckdb_stubs.duckdb_prepared_statement ptr Resource.t
+  type t = Duckdb_stubs.Prepared_statement.t ptr Resource.t
 
   let bind (type a) t index (type_ : a Type.Typed.t) (value : a) =
     let index = Unsigned.UInt64.of_int index in
@@ -106,8 +106,8 @@ module Prepared = struct
     let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
     let t =
       allocate
-        Duckdb_stubs.duckdb_prepared_statement
-        (from_voidp Duckdb_stubs.duckdb_prepared_statement_struct null)
+        Duckdb_stubs.Prepared_statement.t
+        (from_voidp Duckdb_stubs.Prepared_statement.t_struct null)
     in
     match Duckdb_stubs.duckdb_prepare !@conn query t with
     | DuckDBSuccess ->
@@ -159,7 +159,7 @@ module Prepared = struct
 
   let run t ~f =
     let t = Resource.get_exn t in
-    let duckdb_result = make Duckdb_stubs.duckdb_result in
+    let duckdb_result = make Duckdb_stubs.Result.t in
     match Duckdb_stubs.duckdb_execute_prepared !@t (Some (addr duckdb_result)) with
     | DuckDBError ->
       let error : Error.t =

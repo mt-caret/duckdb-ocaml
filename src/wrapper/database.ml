@@ -1,13 +1,11 @@
 open! Core
 open! Ctypes
 
-type t = Duckdb_stubs.duckdb_database ptr Resource.t
+type t = Duckdb_stubs.Database.t ptr Resource.t
 
 let open_exn path =
   let t =
-    allocate
-      Duckdb_stubs.duckdb_database
-      (from_voidp Duckdb_stubs.duckdb_database_struct null)
+    allocate Duckdb_stubs.Database.t (from_voidp Duckdb_stubs.Database.t_struct null)
   in
   match Duckdb_stubs.duckdb_open path t with
   | DuckDBSuccess ->

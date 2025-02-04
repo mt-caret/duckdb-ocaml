@@ -9,5 +9,5 @@ val get_exn : t -> 'a Type.Typed.t -> int -> 'a array
 val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 
 module Private : sig
-  val to_ptr : t -> Duckdb_stubs.duckdb_data_chunk Ctypes.ptr
+  val to_ptr : t -> Duckdb_stubs.Data_chunk.t Ctypes.ptr
 end

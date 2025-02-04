@@ -14,7 +14,7 @@ module Result : sig
   val schema : t -> (string * Type.t) array
 
   module Private : sig
-    val to_struct : t -> Duckdb_stubs.duckdb_result Ctypes.structure
+    val to_struct : t -> Duckdb_stubs.Result.t Ctypes.structure
   end
 end
 

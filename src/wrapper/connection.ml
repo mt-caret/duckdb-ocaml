@@ -1,14 +1,12 @@
 open! Core
 open! Ctypes
 
-type t = Duckdb_stubs.duckdb_connection ptr Resource.t
+type t = Duckdb_stubs.Connection.t ptr Resource.t
 
 let connect_exn db =
   let db = Database.Private.to_ptr db |> Resource.get_exn in
   let t =
-    allocate
-      Duckdb_stubs.duckdb_connection
-      (from_voidp Duckdb_stubs.duckdb_connection_struct null)
+    allocate Duckdb_stubs.Connection.t (from_voidp Duckdb_stubs.Connection.t_struct null)
   in
   match Duckdb_stubs.duckdb_connect !@db t with
   | DuckDBSuccess ->

@@ -1,14 +1,12 @@
 open! Core
 open! Ctypes
 
-type t = Duckdb_stubs.duckdb_appender ptr Resource.t
+type t = Duckdb_stubs.Appender.t ptr Resource.t
 
 let create conn ?schema table =
   let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
   let t =
-    allocate
-      Duckdb_stubs.duckdb_appender
-      (from_voidp Duckdb_stubs.duckdb_appender_struct null)
+    allocate Duckdb_stubs.Appender.t (from_voidp Duckdb_stubs.Appender.t_struct null)
   in
   match Duckdb_stubs.duckdb_appender_create !@conn schema table t with
   | DuckDBSuccess ->
@@ -22,7 +20,7 @@ let create conn ?schema table =
   | DuckDBError -> failwith "Failed to create appender"
 ;;
 
-let to_result t (duckdb_state : Duckdb_stubs.duckdb_state) ~here =
+let to_result t (duckdb_state : Duckdb_stubs.State.t) ~here =
   let t' = Resource.get_exn t in
   match duckdb_state with
   | DuckDBSuccess -> Ok ()
