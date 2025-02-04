@@ -20,6 +20,24 @@ module Types (F : TYPE) = struct
     ;;
   end
 
+  module Internal_ptr_struct (T : sig
+      val name : string
+    end) : sig
+    type t_struct
+    type t = t_struct structure ptr
+
+    val t_struct : t_struct structure typ
+    val t : t typ
+  end = struct
+    type t_struct
+    type t = t_struct structure ptr
+
+    let t_struct = structure [%string "_%{T.name}"]
+    let (_ : _ field) = field t_struct "internal_ptr" (ptr void)
+    let () = seal t_struct
+    let t = typedef (ptr t_struct) T.name
+  end
+
   (* TODO: I feel like we don't need to expose the struct type here. *)
   let duckdb_struct_type_and_typedef name =
     let struct_ = structure [%string "_%{name}"] in
@@ -28,67 +46,47 @@ module Types (F : TYPE) = struct
     struct_, typedef (ptr struct_) name
   ;;
 
-  module Database = struct
-    (* {[
-        //! A database object. Should be closed with `duckdb_close`.
-      typedef struct _duckdb_database {
-        void *internal_ptr;
-      } * duckdb_database;
-    ]} *)
-    type t_struct
-    type t = t_struct structure ptr
+  (* {[
+      //! A database object. Should be closed with `duckdb_close`.
+    typedef struct _duckdb_database {
+      void *internal_ptr;
+    } * duckdb_database;
+  ]} *)
+  module Database = Internal_ptr_struct (struct
+      let name = "duckdb_database"
+    end)
 
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_database"
-    ;;
-  end
+  (* {[
+    //! A connection to a duckdb database. Must be closed with `duckdb_disconnect`.
+    typedef struct _duckdb_connection {
+      void *internal_ptr;
+    } * duckdb_connection;
+  ]} *)
+  module Connection = Internal_ptr_struct (struct
+      let name = "duckdb_connection"
+    end)
 
-  module Connection = struct
-    (* {[
-      //! A connection to a duckdb database. Must be closed with `duckdb_disconnect`.
-      typedef struct _duckdb_connection {
-        void *internal_ptr;
-      } * duckdb_connection;
-    ]}*)
-    type t_struct
-    type t = t_struct structure ptr
+  (* {[
+    //! A prepared statement is a parameterized query that allows you to bind parameters to it.
+    //! Must be destroyed with `duckdb_destroy_prepare`.
+    typedef struct _duckdb_prepared_statement {
+      void *internal_ptr;
+    } * duckdb_prepared_statement;
+  ]} *)
+  module Prepared_statement = Internal_ptr_struct (struct
+      let name = "duckdb_prepared_statement"
+    end)
 
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_connection"
-    ;;
-  end
-
-  module Prepared_statement = struct
-    (* {[
-      //! A prepared statement is a parameterized query that allows you to bind parameters to it.
-      //! Must be destroyed with `duckdb_destroy_prepare`.
-      typedef struct _duckdb_prepared_statement {
-        void *internal_ptr;
-      } * duckdb_prepared_statement;
-    ]} *)
-    type t_struct
-    type t = t_struct structure ptr
-
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_prepared_statement"
-    ;;
-  end
-
-  module Appender = struct
-    (* {[
-      //! The appender enables fast data loading into DuckDB.
-      //! Must be destroyed with `duckdb_appender_destroy`.
-      typedef struct _duckdb_appender {
-        void *internal_ptr;
-      } * duckdb_appender;
-    ]} *)
-    type t_struct
-    type t = t_struct structure ptr
-
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_appender"
-    ;;
-  end
+  (* {[
+    //! The appender enables fast data loading into DuckDB.
+    //! Must be destroyed with `duckdb_appender_destroy`.
+    typedef struct _duckdb_appender {
+      void *internal_ptr;
+    } * duckdb_appender;
+  ]} *)
+  module Appender = Internal_ptr_struct (struct
+      let name = "duckdb_appender"
+    end)
 
   (* {[
     //! DuckDB's index type.
@@ -357,51 +355,36 @@ module Types (F : TYPE) = struct
     ;;
   end
 
-  module Data_chunk = struct
-    (* {[
-      //! Contains a data chunk from a duckdb_result.
-      //! Must be destroyed with `duckdb_destroy_data_chunk`.
-      typedef struct _duckdb_data_chunk {
-        void *internal_ptr;
-      } * duckdb_data_chunk;
-    ]} *)
-    type t_struct
-    type t = t_struct structure ptr
+  (* {[
+    //! Contains a data chunk from a duckdb_result.
+    //! Must be destroyed with `duckdb_destroy_data_chunk`.
+    typedef struct _duckdb_data_chunk {
+      void *internal_ptr;
+    } * duckdb_data_chunk;
+  ]} *)
+  module Data_chunk = Internal_ptr_struct (struct
+      let name = "duckdb_data_chunk"
+    end)
 
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_data_chunk"
-    ;;
-  end
+  (* {[
+    //! A vector to a specified column in a data chunk. Lives as long as the
+    //! data chunk lives, i.e., must not be destroyed.
+    typedef struct _duckdb_vector {
+      void *internal_ptr;
+    } * duckdb_vector;
+  ]} *)
+  module Vector = Internal_ptr_struct (struct
+      let name = "duckdb_vector"
+    end)
 
-  module Vector = struct
-    (* {[
-      //! A vector to a specified column in a data chunk. Lives as long as the
-      //! data chunk lives, i.e., must not be destroyed.
-      typedef struct _duckdb_vector {
-        void *internal_ptr;
-      } * duckdb_vector;
-    ]}*)
-    type t_struct
-    type t = t_struct structure ptr
-
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_vector"
-    ;;
-  end
-
-  module Logical_type = struct
-    (* {[
-      //! Holds an internal logical type.
-      //! Must be destroyed with `duckdb_destroy_logical_type`.
-      typedef struct _duckdb_logical_type {
-        void *internal_ptr;
-      } * duckdb_logical_type;
-    ]} *)
-    type t_struct
-    type t = t_struct structure ptr
-
-    let (t_struct, t) : t_struct structure typ * t typ =
-      duckdb_struct_type_and_typedef "duckdb_logical_type"
-    ;;
-  end
+  (* {[
+    //! Holds an internal logical type.
+    //! Must be destroyed with `duckdb_destroy_logical_type`.
+    typedef struct _duckdb_logical_type {
+      void *internal_ptr;
+    } * duckdb_logical_type;
+  ]} *)
+  module Logical_type = Internal_ptr_struct (struct
+      let name = "duckdb_logical_type"
+    end)
 end
