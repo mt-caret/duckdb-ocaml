@@ -592,6 +592,17 @@ module Types (F : TYPE) = struct
   end
 
   (* {[
+    //! Holds a DuckDB value, which wraps a type.
+    //! Must be destroyed with `duckdb_destroy_value`.
+    typedef struct _duckdb_value {
+      void *internal_ptr;
+    } * duckdb_value;
+  ]} *)
+  module Value = Internal_ptr_struct (struct
+      let name = "duckdb_value"
+    end)
+
+  (* {[
     //! Contains a data chunk from a duckdb_result.
     //! Must be destroyed with `duckdb_destroy_data_chunk`.
     typedef struct _duckdb_data_chunk {

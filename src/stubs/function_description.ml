@@ -370,6 +370,14 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_destroy_logical_type" (ptr Types.Logical_type.t @-> returning void)
   ;;
 
+  let duckdb_destroy_value =
+    foreign "duckdb_destroy_value" (ptr Types.Value.t @-> returning void)
+  ;;
+
+  let duckdb_create_decimal =
+    foreign "duckdb_create_decimal" (Types.Decimal.t @-> returning Types.Value.t)
+  ;;
+
   let duckdb_appender_create =
     foreign
       "duckdb_appender_create"
@@ -514,9 +522,15 @@ module Functions (F : FOREIGN) = struct
       (Types.Appender.t @-> string @-> returning Types.State.t)
   ;;
 
-  let duckdb_append_varchar_length =
+  let duckdb_append_blob =
     foreign
-      "duckdb_append_varchar_length"
+      "duckdb_append_blob"
       (Types.Appender.t @-> ptr void @-> Types.idx_t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_value =
+    foreign
+      "duckdb_append_value"
+      (Types.Appender.t @-> Types.Value.t @-> returning Types.State.t)
   ;;
 end
