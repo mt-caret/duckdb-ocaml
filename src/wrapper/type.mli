@@ -54,6 +54,15 @@ module Typed : sig
     | U_big_int : Unsigned.uint64 t
     | Float : float t
     | Double : float t
+    | Timestamp : Duckdb_stubs.Timestamp.t Ctypes.structure t
+    | Date : Duckdb_stubs.Date.t Ctypes.structure t
+    | Time : Duckdb_stubs.Time.t Ctypes.structure t
+    | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
+    | Huge_int : Duckdb_stubs.Hugeint.t Ctypes.structure t
+    | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
+    | Var_char : string t
+    | Blob : string t
+    | Decimal : Duckdb_stubs.Decimal.t Ctypes.structure t
 
   val to_untyped : 'a t -> untyped
   val to_c_type : 'a t -> 'a Ctypes_static.typ

@@ -7,6 +7,10 @@ module Functions (F : FOREIGN) = struct
   let duckdb_library_version = foreign "duckdb_library_version" (void @-> returning string)
   let duckdb_free = foreign "duckdb_free" (ptr void @-> returning void)
 
+  let duckdb_string_t_data =
+    foreign "duckdb_string_t_data" (ptr Types.String.t @-> returning string)
+  ;;
+
   let duckdb_open =
     foreign "duckdb_open" (string @-> ptr Types.Database.t @-> returning Types.State.t)
   ;;
@@ -145,6 +149,33 @@ module Functions (F : FOREIGN) = struct
       (Types.Prepared_statement.t @-> Types.idx_t @-> int64_t @-> returning Types.State.t)
   ;;
 
+  let duckdb_bind_hugeint =
+    foreign
+      "duckdb_bind_hugeint"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Hugeint.t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_uhugeint =
+    foreign
+      "duckdb_bind_uhugeint"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Uhugeint.t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_decimal =
+    foreign
+      "duckdb_bind_decimal"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Decimal.t
+       @-> returning Types.State.t)
+  ;;
+
   let duckdb_bind_uint8 =
     foreign
       "duckdb_bind_uint8"
@@ -179,6 +210,58 @@ module Functions (F : FOREIGN) = struct
     foreign
       "duckdb_bind_double"
       (Types.Prepared_statement.t @-> Types.idx_t @-> double @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_varchar =
+    foreign
+      "duckdb_bind_varchar"
+      (Types.Prepared_statement.t @-> Types.idx_t @-> string @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_blob =
+    foreign
+      "duckdb_bind_blob"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> ptr void
+       @-> Types.idx_t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_date =
+    foreign
+      "duckdb_bind_date"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Date.t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_time =
+    foreign
+      "duckdb_bind_time"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Time.t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_timestamp =
+    foreign
+      "duckdb_bind_timestamp"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Timestamp.t
+       @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_interval =
+    foreign
+      "duckdb_bind_interval"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Interval.t
+       @-> returning Types.State.t)
   ;;
 
   let duckdb_execute_prepared =
@@ -308,7 +391,9 @@ module Functions (F : FOREIGN) = struct
   ;;
 
   let duckdb_appender_error =
-    foreign "duckdb_appender_error" (Types.Appender.t @-> returning string_opt)
+    (* We can't use [string_opt] since the return type of the function is
+       [const char*] instead of [char*]. *)
+    foreign "duckdb_appender_error" (Types.Appender.t @-> returning (ptr_opt (const char)))
   ;;
 
   let duckdb_appender_flush =
@@ -353,6 +438,18 @@ module Functions (F : FOREIGN) = struct
       (Types.Appender.t @-> int64_t @-> returning Types.State.t)
   ;;
 
+  let duckdb_append_hugeint =
+    foreign
+      "duckdb_append_hugeint"
+      (Types.Appender.t @-> Types.Hugeint.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_uhugeint =
+    foreign
+      "duckdb_append_uhugeint"
+      (Types.Appender.t @-> Types.Uhugeint.t @-> returning Types.State.t)
+  ;;
+
   let duckdb_append_uint8 =
     foreign
       "duckdb_append_uint8"
@@ -385,5 +482,41 @@ module Functions (F : FOREIGN) = struct
     foreign
       "duckdb_append_double"
       (Types.Appender.t @-> double @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_date =
+    foreign
+      "duckdb_append_date"
+      (Types.Appender.t @-> Types.Date.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_time =
+    foreign
+      "duckdb_append_time"
+      (Types.Appender.t @-> Types.Time.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_timestamp =
+    foreign
+      "duckdb_append_timestamp"
+      (Types.Appender.t @-> Types.Timestamp.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_interval =
+    foreign
+      "duckdb_append_interval"
+      (Types.Appender.t @-> Types.Interval.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_varchar =
+    foreign
+      "duckdb_append_varchar"
+      (Types.Appender.t @-> string @-> returning Types.State.t)
+  ;;
+
+  let duckdb_append_varchar_length =
+    foreign
+      "duckdb_append_varchar_length"
+      (Types.Appender.t @-> ptr void @-> Types.idx_t @-> returning Types.State.t)
   ;;
 end

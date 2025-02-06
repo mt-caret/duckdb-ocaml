@@ -148,6 +148,15 @@ module Typed = struct
     | U_big_int : Unsigned.uint64 t
     | Float : float t
     | Double : float t
+    | Timestamp : Duckdb_stubs.Timestamp.t Ctypes.structure t
+    | Date : Duckdb_stubs.Date.t Ctypes.structure t
+    | Time : Duckdb_stubs.Time.t Ctypes.structure t
+    | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
+    | Huge_int : Duckdb_stubs.Hugeint.t Ctypes.structure t
+    | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
+    | Var_char : string t
+    | Blob : string t
+    | Decimal : Duckdb_stubs.Decimal.t Ctypes.structure t
 
   let to_untyped (type a) (t : a t) : untyped =
     match t with
@@ -162,6 +171,15 @@ module Typed = struct
     | U_big_int -> U_big_int
     | Float -> Float
     | Double -> Double
+    | Timestamp -> Timestamp
+    | Date -> Date
+    | Time -> Time
+    | Interval -> Interval
+    | Huge_int -> Huge_int
+    | Uhuge_int -> Uhuge_int
+    | Var_char -> Var_char
+    | Blob -> Blob
+    | Decimal -> Decimal
   ;;
 
   let to_c_type (type a) (t : a t) : a Ctypes.typ =
@@ -177,6 +195,15 @@ module Typed = struct
     | U_big_int -> uint64_t
     | Float -> float
     | Double -> double
+    | Timestamp -> Duckdb_stubs.Timestamp.t
+    | Date -> Duckdb_stubs.Date.t
+    | Time -> Duckdb_stubs.Time.t
+    | Interval -> Duckdb_stubs.Interval.t
+    | Huge_int -> Duckdb_stubs.Hugeint.t
+    | Uhuge_int -> Duckdb_stubs.Uhugeint.t
+    | Var_char -> string
+    | Blob -> string
+    | Decimal -> Duckdb_stubs.Decimal.t
   ;;
 
   module List = struct

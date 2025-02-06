@@ -9,6 +9,7 @@ val flush : t -> here:Source_code_position.t -> (unit, string) result
 val flush_exn : t -> here:Source_code_position.t -> unit
 val column_types : t -> Type.t list
 
+(* TODO: add a version that takes an ['a option Heterogeneous_list.t]. *)
 val append
   :  t
   -> 'a Type.Typed.List.t

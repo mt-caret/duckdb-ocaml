@@ -324,6 +324,242 @@ module Types (F : TYPE) = struct
     ;;
   end
 
+  module Date = struct
+    (* {[ 
+      //! Days are stored as days since 1970-01-01
+      //! Use the duckdb_from_date/duckdb_to_date function to extract individual information
+      typedef struct {
+        int32_t days;
+      } duckdb_date;
+      typedef struct {
+        int32_t year;
+        int8_t month;
+        int8_t day;
+      } duckdb_date_struct;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_date") "duckdb_date"
+    let days : (int32, t structure) field = field t "days" int32_t
+    let () = seal t
+
+    type t_struct
+
+    let t_struct = typedef (structure "_duckdb_date_struct") "duckdb_date_struct"
+    let year : (int32, t_struct structure) field = field t_struct "year" int32_t
+    let month : (int, t_struct structure) field = field t_struct "month" int8_t
+    let day : (int, t_struct structure) field = field t_struct "day" int8_t
+    let () = seal t_struct
+  end
+
+  module Time = struct
+    (* {[ 
+      //! Time is stored as microseconds since 00:00:00
+      //! Use the duckdb_from_time/duckdb_to_time function to extract individual information
+      typedef struct {
+        int64_t micros;
+      } duckdb_time;
+      typedef struct {
+        int8_t hour;
+        int8_t min;
+        int8_t sec;
+        int32_t micros;
+      } duckdb_time_struct;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_time") "duckdb_time"
+    let micros : (int64, t structure) field = field t "micros" int64_t
+    let () = seal t
+
+    type t_struct
+
+    let t_struct = typedef (structure "_duckdb_time_struct") "duckdb_time_struct"
+    let hour : (int, t_struct structure) field = field t_struct "hour" int8_t
+    let min : (int, t_struct structure) field = field t_struct "min" int8_t
+    let sec : (int, t_struct structure) field = field t_struct "sec" int8_t
+    let micros_ : (int32, t_struct structure) field = field t_struct "micros" int32_t
+    let () = seal t_struct
+  end
+
+  module Time_tz = struct
+    (* {[ 
+      //! TIME_TZ is stored as 40 bits for int64_t micros, and 24 bits for int32_t offset
+      typedef struct {
+        uint64_t bits;
+      } duckdb_time_tz;
+      typedef struct {
+        duckdb_time_struct time;
+        int32_t offset;
+      } duckdb_time_tz_struct;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_time_tz") "duckdb_time_tz"
+    let bits : (Unsigned.UInt64.t, t structure) field = field t "bits" uint64_t
+    let () = seal t
+
+    type t_struct
+
+    let t_struct = typedef (structure "_duckdb_time_tz_struct") "duckdb_time_tz_struct"
+    let time : (Time.t structure, t_struct structure) field = field t_struct "time" Time.t
+    let offset : (int32, t_struct structure) field = field t_struct "offset" int32_t
+    let () = seal t_struct
+  end
+
+  module Timestamp = struct
+    (* {[ 
+      //! Timestamps are stored as microseconds since 1970-01-01
+      //! Use the duckdb_from_timestamp/duckdb_to_timestamp function to extract individual information
+      typedef struct {
+        int64_t micros;
+      } duckdb_timestamp;
+      typedef struct {
+        duckdb_date_struct date;
+        duckdb_time_struct time;
+      } duckdb_timestamp_struct;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_timestamp") "duckdb_timestamp"
+    let micros : (int64, t structure) field = field t "micros" int64_t
+    let () = seal t
+
+    type t_struct
+
+    let t_struct =
+      typedef (structure "_duckdb_timestamp_struct") "duckdb_timestamp_struct"
+    ;;
+
+    let date : (Date.t structure, t_struct structure) field = field t_struct "date" Date.t
+    let time : (Time.t structure, t_struct structure) field = field t_struct "time" Time.t
+    let () = seal t_struct
+  end
+
+  module Interval = struct
+    (* {[
+      typedef struct {
+        int32_t months;
+        int32_t days;
+        int64_t micros;
+      } duckdb_interval;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_interval") "duckdb_interval"
+    let months : (int32, t structure) field = field t "months" int32_t
+    let days : (int32, t structure) field = field t "days" int32_t
+    let micros : (int64, t structure) field = field t "micros" int64_t
+    let () = seal t
+  end
+
+  module Hugeint = struct
+    (* {[
+      //! Hugeints are composed of a (lower, upper) component
+      //! The value of the hugeint is upper * 2^64 + lower
+      //! For easy usage, the functions duckdb_hugeint_to_double/duckdb_double_to_hugeint are recommended
+      typedef struct {
+        uint64_t lower;
+        int64_t upper;
+      } duckdb_hugeint;
+   ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_hugeint") "duckdb_hugeint"
+    let lower : (Unsigned.UInt64.t, t structure) field = field t "lower" uint64_t
+    let upper : (int64, t structure) field = field t "upper" int64_t
+    let () = seal t
+  end
+
+  module Uhugeint = struct
+    (* {[ 
+      typedef struct {
+        uint64_t lower;
+        uint64_t upper;
+      } duckdb_uhugeint;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_uhugeint") "duckdb_uhugeint"
+    let lower : (Unsigned.UInt64.t, t structure) field = field t "lower" uint64_t
+    let upper : (Unsigned.UInt64.t, t structure) field = field t "upper" uint64_t
+    let () = seal t
+  end
+
+  module Decimal = struct
+    (* {[
+      //! Decimals are composed of a width and a scale, and are stored in a hugeint
+      typedef struct {
+        uint8_t width;
+        uint8_t scale;
+        duckdb_hugeint value;
+      } duckdb_decimal;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_decimal") "duckdb_decimal"
+    let width : (Unsigned.UInt8.t, t structure) field = field t "width" uint8_t
+    let scale : (Unsigned.UInt8.t, t structure) field = field t "scale" uint8_t
+    let value : (Hugeint.t structure, t structure) field = field t "value" Hugeint.t
+    let () = seal t
+  end
+
+  module String = struct
+    (* {[
+      //! The internal representation of a VARCHAR (string_t). If the VARCHAR does not
+      //! exceed 12 characters, then we inline it. Otherwise, we inline a prefix for faster
+      //! string comparisons and store a pointer to the remaining characters. This is a non-
+      //! owning structure, i.e., it does not have to be freed.
+      typedef struct {
+        union {
+          struct {
+            uint32_t length;
+            char prefix[4];
+            char *ptr;
+          } pointer;
+          struct {
+            uint32_t length;
+            char inlined[12];
+          } inlined;
+        } value;
+      } duckdb_string_t;
+    ]} *)
+
+    type pointer
+    type inlined
+    type value
+    type t
+
+    (* TODO: The overall setup seems quite sus... It's possible that ctypes just
+       doesn't support this specific use case, in which case [abstract] might be
+       the correct approach. *)
+
+    let pointer : pointer structure typ = typedef (structure "_pointer") "duckdb_string_t"
+    let pointer_length = field pointer "value.pointer.length" uint32_t
+    let pointer_prefix = field pointer "value.pointer.prefix" (array 4 char)
+    let pointer_ptr = field pointer "value.pointer.ptr" (ptr char)
+    let () = seal pointer
+    let inlined : inlined structure typ = typedef (structure "_inlined") "duckdb_string_t"
+    let inlined_length = field inlined "value.inlined.length" uint32_t
+    let inlined_inlined = field inlined "value.inlined.inlined" (array 12 char)
+    let () = seal inlined
+    let value : value union typ = typedef (union "_value") "duckdb_string_t"
+    let value_pointer = field value "value.pointer" pointer
+    let value_inlined = field value "value.inlined" inlined
+    let () = seal value
+    let t : t structure typ = typedef (structure "_duckdb_string_t") "duckdb_string_t"
+    let (t_value : (value union, t structure) field) = field t "value" value
+    let () = seal t
+  end
+
   module Column = struct
     type t
 

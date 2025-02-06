@@ -98,6 +98,20 @@ module Prepared = struct
     | U_big_int -> Duckdb_stubs.duckdb_bind_uint64 !@t index value
     | Float -> Duckdb_stubs.duckdb_bind_float !@t index value
     | Double -> Duckdb_stubs.duckdb_bind_double !@t index value
+    | Timestamp -> Duckdb_stubs.duckdb_bind_timestamp !@t index value
+    | Date -> Duckdb_stubs.duckdb_bind_date !@t index value
+    | Time -> Duckdb_stubs.duckdb_bind_time !@t index value
+    | Interval -> Duckdb_stubs.duckdb_bind_interval !@t index value
+    | Huge_int -> Duckdb_stubs.duckdb_bind_hugeint !@t index value
+    | Uhuge_int -> Duckdb_stubs.duckdb_bind_uhugeint !@t index value
+    | Var_char -> Duckdb_stubs.duckdb_bind_varchar !@t index value
+    | Blob ->
+      Duckdb_stubs.duckdb_bind_blob
+        !@t
+        index
+        (to_voidp (Ctypes_std_views.char_ptr_of_string value))
+        (Unsigned.UInt64.of_int (String.length value))
+    | Decimal -> Duckdb_stubs.duckdb_bind_decimal !@t index value
   ;;
 
   let destroy = Resource.free

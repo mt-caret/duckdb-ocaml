@@ -74,6 +74,19 @@ let append_value (type a) t (type_ : a Type.Typed.t) (value : a) =
   | U_big_int -> Duckdb_stubs.duckdb_append_uint64 !@t value
   | Float -> Duckdb_stubs.duckdb_append_float !@t value
   | Double -> Duckdb_stubs.duckdb_append_double !@t value
+  | Timestamp -> Duckdb_stubs.duckdb_append_timestamp !@t value
+  | Date -> Duckdb_stubs.duckdb_append_date !@t value
+  | Time -> Duckdb_stubs.duckdb_append_time !@t value
+  | Interval -> Duckdb_stubs.duckdb_append_interval !@t value
+  | Huge_int -> Duckdb_stubs.duckdb_append_hugeint !@t value
+  | Uhuge_int -> Duckdb_stubs.duckdb_append_uhugeint !@t value
+  | Var_char -> Duckdb_stubs.duckdb_append_varchar !@t value
+  | Blob ->
+    Duckdb_stubs.duckdb_append_varchar_length
+      !@t
+      (to_voidp (Ctypes_std_views.char_ptr_of_string value))
+      (Unsigned.UInt64.of_int (String.length value))
+  | Decimal -> failwith "Decimal is not supported for appending"
 ;;
 
 let rec append_row
