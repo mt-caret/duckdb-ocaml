@@ -3,7 +3,7 @@ open! Ctypes
 
 let%expect_test "duckdb_library_version" =
   Duckdb_stubs.duckdb_library_version () |> print_endline;
-  [%expect {| v1.1.3 |}]
+  [%expect {| v1.2.0 |}]
 ;;
 
 let%expect_test "try to use closed database" =
@@ -115,6 +115,7 @@ let%expect_test "query errors" =
           (message
             "Catalog Error: Table with name non_existent_table does not exist!\
            \nDid you mean \"sqlite_temp_master\"?\
+           \n\
            \nLINE 1: SELECT * FROM non_existent_table\
            \n                      ^")))
         |}]))

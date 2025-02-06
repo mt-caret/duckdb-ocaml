@@ -4,7 +4,7 @@ duckdb-ocaml provides bindings to the DuckDB C API. This is a work in progress.
 
 ## how to build
 
-Download [the v.1.1.3 release of duckdb zip](https://duckdb.org/docs/installation/index?version=stable&environment=cplusplus&platform=linux&download_method=direct&architecture=x86_64),
+Download [the v.1.2.0 release of duckdb zip](https://duckdb.org/docs/installation/index?version=stable&environment=cplusplus&platform=linux&download_method=direct&architecture=x86_64),
 and unpack the contents into the root of this repository with name `libduckdb`:
 
 ```
