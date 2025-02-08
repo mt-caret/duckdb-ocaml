@@ -215,6 +215,8 @@ let rec to_logical_type (t : t) : Duckdb_stubs.Logical_type.t =
     let names, types = List.unzip children in
     List.map types ~f:to_logical_type
     |> with_logical_types ~f:(fun logical_types ->
+      (* TODO: this is inefficient since we're likely copying over whole
+         strings instead of just writing pointers. *)
       let names_ptr = allocate_n string ~count:(List.length names) in
       List.iteri names ~f:(fun i name -> names_ptr +@ i <-@ name);
       let types_ptr = allocate_n Duckdb_stubs.Logical_type.t ~count:(List.length types) in
