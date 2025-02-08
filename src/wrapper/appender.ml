@@ -86,17 +86,6 @@ let append_value (type a) t (type_ : a Type.Typed.t) (value : a) =
       !@t
       (to_voidp (Ctypes_std_views.char_ptr_of_string value))
       (Unsigned.UInt64.of_int (String.length value))
-  | Decimal ->
-    (* TODO: a test for this would be nice. *)
-    (* There is no [duckdb_append_decimal] function, so we have to create a
-      [duckdb_value]. *)
-    let duckdb_value =
-      allocate Duckdb_stubs.Value.t (from_voidp Duckdb_stubs.Value.t_struct null)
-    in
-    duckdb_value <-@ Duckdb_stubs.duckdb_create_decimal value;
-    let state = Duckdb_stubs.duckdb_append_value !@t !@duckdb_value in
-    Duckdb_stubs.duckdb_destroy_value duckdb_value;
-    state
 ;;
 
 let rec append_row

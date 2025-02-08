@@ -20,11 +20,14 @@ type t =
   | Uhuge_int
   | Var_char
   | Blob
-  | Decimal
+  | Decimal of
+      { width : int
+      ; scale : int
+      }
   | Timestamp_s
   | Timestamp_ms
   | Timestamp_ns
-  | Enum
+  | Enum of string list
   | List of t
   | Struct of (string * t) list
   | Map of t * t
@@ -38,6 +41,7 @@ type t =
 [@@deriving sexp, compare, equal]
 
 val of_logical_type_exn : Duckdb_stubs.Logical_type.t -> t
+val to_logical_type : t -> Duckdb_stubs.Logical_type.t
 
 module Typed : sig
   type untyped := t
@@ -62,7 +66,6 @@ module Typed : sig
     | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
     | Var_char : string t
     | Blob : string t
-    | Decimal : Duckdb_stubs.Decimal.t Ctypes.structure t
 
   val to_untyped : 'a t -> untyped
   val to_c_type : 'a t -> 'a Ctypes_static.typ

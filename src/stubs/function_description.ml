@@ -298,8 +298,78 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_destroy_data_chunk" (ptr Types.Data_chunk.t @-> returning void)
   ;;
 
+  let duckdb_create_logical_type =
+    foreign "duckdb_create_logical_type" (Types.Type.t @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_list_type =
+    foreign
+      "duckdb_create_list_type"
+      (Types.Logical_type.t @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_array_type =
+    foreign
+      "duckdb_create_array_type"
+      (Types.Logical_type.t @-> Types.idx_t @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_map_type =
+    foreign
+      "duckdb_create_map_type"
+      (Types.Logical_type.t @-> Types.Logical_type.t @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_union_type =
+    foreign
+      "duckdb_create_union_type"
+      (ptr Types.Logical_type.t
+       @-> ptr string
+       @-> Types.idx_t
+       @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_struct_type =
+    foreign
+      "duckdb_create_struct_type"
+      (ptr Types.Logical_type.t
+       @-> ptr string
+       @-> Types.idx_t
+       @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_enum_type =
+    foreign
+      "duckdb_create_enum_type"
+      (ptr string @-> Types.idx_t @-> returning Types.Logical_type.t)
+  ;;
+
+  let duckdb_create_decimal_type =
+    foreign
+      "duckdb_create_decimal_type"
+      (uint8_t @-> uint8_t @-> returning Types.Logical_type.t)
+  ;;
+
   let duckdb_get_type_id =
     foreign "duckdb_get_type_id" (Types.Logical_type.t @-> returning Types.Type.t)
+  ;;
+
+  let duckdb_decimal_width =
+    foreign "duckdb_decimal_width" (Types.Logical_type.t @-> returning uint8_t)
+  ;;
+
+  let duckdb_decimal_scale =
+    foreign "duckdb_decimal_scale" (Types.Logical_type.t @-> returning uint8_t)
+  ;;
+
+  let duckdb_enum_dictionary_size =
+    foreign "duckdb_enum_dictionary_size" (Types.Logical_type.t @-> returning uint32_t)
+  ;;
+
+  let duckdb_enum_dictionary_value =
+    foreign
+      "duckdb_enum_dictionary_value"
+      (Types.Logical_type.t @-> Types.idx_t @-> returning string)
   ;;
 
   let duckdb_list_type_child_type =

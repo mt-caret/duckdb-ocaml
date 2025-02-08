@@ -111,7 +111,6 @@ module Prepared = struct
         index
         (to_voidp (Ctypes_std_views.char_ptr_of_string value))
         (Unsigned.UInt64.of_int (String.length value))
-    | Decimal -> Duckdb_stubs.duckdb_bind_decimal !@t index value
   ;;
 
   let destroy = Resource.free
