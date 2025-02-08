@@ -1,0 +1,3 @@
+[submodule "vendor/duckdb"]
+	path = vendor/duckdb
+	url = https://github.com/duckdb/duckdb

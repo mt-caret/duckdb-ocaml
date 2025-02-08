@@ -1,0 +1,13 @@
+(rule
+ (targets libduckdb.a dllduckdb.so)
+ (deps
+  (source_tree duckdb))
+ (action
+  (no-infer
+   (progn
+    (chdir
+     duckdb
+     (bash
+      "OVERRIDE_GIT_DESCRIBE=v1.2.0-0-g5f5512b827 GEN=ninja %{make} bundle-library"))
+    (copy duckdb/build/release/libduckdb_bundle.a libduckdb.a)
+    (copy duckdb/build/release/src/libduckdb.so dllduckdb.so)))))
