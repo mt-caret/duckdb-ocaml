@@ -8,7 +8,6 @@
  (foreign_archives duckdb)
  (ctypes
   (external_library_name duckdb)
-  ;(deps ../../vendor/duckdb/src/include/duckdb.h)
   (build_flags_resolver
    (vendored
     (c_flags :standard "-I../../vendor/duckdb/src/include")
