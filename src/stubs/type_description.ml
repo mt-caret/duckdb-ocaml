@@ -591,6 +591,10 @@ module Types (F : TYPE) = struct
     ;;
   end
 
+  module Function_info = Internal_ptr_struct (struct
+      let name = "duckdb_function_info"
+    end)
+
   (* {[
     //! Holds a DuckDB value, which wraps a type.
     //! Must be destroyed with `duckdb_destroy_value`.
@@ -623,6 +627,16 @@ module Types (F : TYPE) = struct
   module Vector = Internal_ptr_struct (struct
       let name = "duckdb_vector"
     end)
+
+  module Scalar_function = struct
+    include Internal_ptr_struct (struct
+        let name = "duckdb_scalar_function"
+      end)
+
+    let function_ =
+      static_funptr (Function_info.t @-> Data_chunk.t @-> Vector.t @-> returning void)
+    ;;
+  end
 
   (* {[
     //! Holds an internal logical type.

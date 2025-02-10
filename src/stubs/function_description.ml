@@ -603,4 +603,44 @@ module Functions (F : FOREIGN) = struct
       "duckdb_append_value"
       (Types.Appender.t @-> Types.Value.t @-> returning Types.State.t)
   ;;
+
+  let duckdb_create_scalar_function =
+    foreign "duckdb_create_scalar_function" (void @-> returning Types.Scalar_function.t)
+  ;;
+
+  let duckdb_destroy_scalar_function =
+    foreign
+      "duckdb_destroy_scalar_function"
+      (ptr Types.Scalar_function.t @-> returning void)
+  ;;
+
+  let duckdb_scalar_function_set_name =
+    foreign
+      "duckdb_scalar_function_set_name"
+      (Types.Scalar_function.t @-> string @-> returning void)
+  ;;
+
+  let duckdb_scalar_function_add_parameter =
+    foreign
+      "duckdb_scalar_function_add_parameter"
+      (Types.Scalar_function.t @-> Types.Logical_type.t @-> returning void)
+  ;;
+
+  let duckdb_scalar_function_set_return_type =
+    foreign
+      "duckdb_scalar_function_set_return_type"
+      (Types.Scalar_function.t @-> Types.Logical_type.t @-> returning void)
+  ;;
+
+  let duckdb_scalar_function_set_function =
+    foreign
+      "duckdb_scalar_function_set_function"
+      (Types.Scalar_function.t @-> Types.Scalar_function.function_ @-> returning void)
+  ;;
+
+  let duckdb_register_scalar_function =
+    foreign
+      "duckdb_register_scalar_function"
+      (Types.Connection.t @-> Types.Scalar_function.t @-> returning Types.State.t)
+  ;;
 end

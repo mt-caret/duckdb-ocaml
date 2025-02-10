@@ -189,3 +189,28 @@ let%expect_test "appender" =
           (argument_types (Small_int Float)))
         |}]))
 ;;
+
+(* TODO: clean up example *)
+let%expect_test "scalar function registration" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let scalar_function =
+        Duckdb.Function.Scalar.create
+          "multiply_numbers_together"
+          [ Small_int; Small_int; Small_int ]
+          ~f:(fun _info chunk output ->
+            let a = Duckdb.Data_chunk.Private.get_exn chunk Small_int 0 in
+            let b = Duckdb.Data_chunk.Private.get_exn chunk Small_int 1 in
+            let data =
+              Duckdb_stubs.duckdb_vector_get_data output
+              |> from_voidp (Duckdb.Type.Typed.to_c_type Small_int)
+            in
+            Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a + b))
+      in
+      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(1, 2)" ~f:(fun res ->
+        Duckdb.Query.Result.schema res
+        |> [%sexp_of: (string * Duckdb.Type.t) array]
+        |> print_s;
+        [%expect {| (("multiply_numbers_together(1, 2)" Small_int)) |}])))
+;;

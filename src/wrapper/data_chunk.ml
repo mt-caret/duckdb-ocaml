@@ -41,18 +41,21 @@ let assert_all_valid vector ~len =
              "Not all rows are valid" ~validity:(Unsigned.UInt64.to_int !@validity : int)])
 ;;
 
-let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
+(* TODO: this is a mess, clean up *)
+let get_exn' (type a) data_chunk ~length (type_ : a Type.Typed.t) idx : a array =
   (* TODO: should check that type lines up with schema *)
   let vector =
-    Duckdb_stubs.duckdb_data_chunk_get_vector
-      !@(t.data_chunk)
-      (Unsigned.UInt64.of_int idx)
+    Duckdb_stubs.duckdb_data_chunk_get_vector data_chunk (Unsigned.UInt64.of_int idx)
   in
-  assert_all_valid vector ~len:t.length;
+  assert_all_valid vector ~len:length;
   let data =
     Duckdb_stubs.duckdb_vector_get_data vector |> from_voidp (Type.Typed.to_c_type type_)
   in
-  Array.init t.length ~f:(fun i -> !@(data +@ i))
+  Array.init length ~f:(fun i -> !@(data +@ i))
+;;
+
+let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
+  get_exn' !@(t.data_chunk) ~length:t.length type_ idx
 ;;
 
 let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
@@ -79,4 +82,10 @@ let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
 
 module Private = struct
   let to_ptr t = t.data_chunk
+
+  let get_exn t =
+    get_exn'
+      t
+      ~length:(Duckdb_stubs.duckdb_data_chunk_get_size t |> Unsigned.UInt64.to_int)
+  ;;
 end
