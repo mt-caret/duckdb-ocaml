@@ -14,3 +14,4 @@ duckdb-ocaml provides bindings to the DuckDB C API. This is a work in progress.
 - [ ] table functions
 - [ ] replacement scans
 - [x] set up dune-based build of duckdb
+- [ ] add easy way to pretty-print result of query
