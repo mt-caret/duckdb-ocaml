@@ -222,17 +222,17 @@ let%expect_test "scalar function registration" =
               Duckdb_stubs.duckdb_vector_get_data output
               |> from_voidp (Duckdb.Type.Typed.to_c_type Small_int)
             in
-            Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a + b))
+            Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a * b))
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
-      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(1, 2)" ~f:print_result;
+      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
       [%expect
         {|
         ┌─────────────────────────────────┐
-        │ multiply_numbers_together(1, 2) │
+        │ multiply_numbers_together(2, 4) │
         │ Small_int                       │
         ├─────────────────────────────────┤
-        │ 3                               │
+        │ 8                               │
         └─────────────────────────────────┘
         |}]))
 ;;
