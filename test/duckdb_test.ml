@@ -32,31 +32,48 @@ let%expect_test "try to use closed connection" =
     {| ("Already freed" Duckdb.Connection (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
 ;;
 
+let print_result (result : Duckdb.Query.Result.t) =
+  let n, fetch_result = Duckdb.Data_chunk.fetch_all result in
+  let columns =
+    Array.to_list fetch_result
+    |> List.map ~f:(fun (name, packed_array) ->
+      let type_name =
+        (match packed_array with
+         | T (type_, _) -> Duckdb.Type.Typed.to_untyped type_
+         | T_opt (type_, _) -> Duckdb.Type.Typed.to_untyped type_)
+        |> [%sexp_of: Duckdb.Type.t]
+        |> Sexp.to_string
+      in
+      Ascii_table_kernel.Column.create [%string "%{name}\n%{type_name}"] (fun i ->
+        match packed_array with
+        | T (type_, array) -> Array.get array i |> Duckdb.Type.Typed.to_string_hum type_
+        | T_opt (type_, array) ->
+          (match Array.get array i with
+           | None -> "null"
+           | Some value -> Duckdb.Type.Typed.to_string_hum type_ value)))
+  in
+  List.range 0 n
+  |> Ascii_table_kernel.to_string_noattr columns ~bars:`Unicode
+  |> print_endline
+;;
+
 let%expect_test "create, insert, and select" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       Duckdb.Query.run_exn' conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
       Duckdb.Query.run_exn' conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
-      Duckdb.Query.run_exn conn "SELECT * FROM integers" ~f:(fun res ->
-        Duckdb.Data_chunk.fetch
-          res
-          ~f:
-            (Option.iter ~f:(fun chunk ->
-               let row_count = Duckdb.Data_chunk.length chunk in
-               print_endline (Int.to_string row_count);
-               [%expect {| 3 |}];
-               let vector =
-                 Duckdb.Data_chunk.get_exn chunk U_integer 0
-                 |> Array.map ~f:Unsigned.UInt32.to_int
-               in
-               print_s [%message (vector : int array)];
-               [%expect {| (vector (3 5 7)) |}];
-               let vector =
-                 Duckdb.Data_chunk.get_opt chunk U_integer 1
-                 |> Array.map ~f:(Option.map ~f:Unsigned.UInt32.to_int)
-               in
-               print_s [%message (vector : int option array)];
-               [%expect {| (vector ((4) (6) ())) |}])))))
+      Duckdb.Query.run_exn conn "SELECT * FROM integers" ~f:print_result;
+      [%expect
+        {|
+        ┌─────────┬─────────┐
+        │ i       │ j       │
+        │ Integer │ Integer │
+        ├─────────┼─────────┤
+        │ 3       │ 4       │
+        │ 5       │ 6       │
+        │ 7       │ null    │
+        └─────────┴─────────┘
+        |}]))
 ;;
 
 let%expect_test "get type and name" =
@@ -208,9 +225,14 @@ let%expect_test "scalar function registration" =
             Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a + b))
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
-      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(1, 2)" ~f:(fun res ->
-        Duckdb.Query.Result.schema res
-        |> [%sexp_of: (string * Duckdb.Type.t) array]
-        |> print_s;
-        [%expect {| (("multiply_numbers_together(1, 2)" Small_int)) |}])))
+      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(1, 2)" ~f:print_result;
+      [%expect
+        {|
+        ┌─────────────────────────────────┐
+        │ multiply_numbers_together(1, 2) │
+        │ Small_int                       │
+        ├─────────────────────────────────┤
+        │ 3                               │
+        └─────────────────────────────────┘
+        |}]))
 ;;

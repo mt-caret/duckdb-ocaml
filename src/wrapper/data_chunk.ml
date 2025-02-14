@@ -80,6 +80,34 @@ let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
       | false -> None)
 ;;
 
+let fetch_all query_result =
+  (* TODO: This is super awkward... *)
+  let getters, collect =
+    Query.Result.schema query_result
+    |> Array.mapi ~f:(fun i (name, type_) ->
+      match Type.Typed.of_untyped type_ with
+      | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
+      | Some (T type_) ->
+        let result = ref [] in
+        ( (fun t -> result := get_opt t type_ i :: !result)
+        , fun () -> name, Packed_column.T_opt (type_, Array.concat (List.rev !result)) ))
+    |> Array.unzip
+  in
+  let rec go accum =
+    match
+      fetch query_result ~f:(function
+        | None -> None
+        | Some t ->
+          Array.iter getters ~f:(fun getter -> getter t);
+          Some (length t))
+    with
+    | None -> accum
+    | Some n -> go (accum + n)
+  in
+  let total_length = go 0 in
+  total_length, Array.map collect ~f:(fun collect -> collect ())
+;;
+
 module Private = struct
   let to_ptr t = t.data_chunk
 

@@ -274,6 +274,8 @@ module Typed = struct
     | Var_char : string t
     | Blob : string t
 
+  type packed = T : _ t -> packed
+
   let to_untyped (type a) (t : a t) : untyped =
     match t with
     | Boolean -> Boolean
@@ -297,6 +299,44 @@ module Typed = struct
     | Blob -> Blob
   ;;
 
+  let of_untyped (untyped : untyped) : packed option =
+    match untyped with
+    | Boolean -> Some (T Boolean)
+    | Tiny_int -> Some (T Tiny_int)
+    | Small_int -> Some (T Small_int)
+    | Integer -> Some (T Integer)
+    | Big_int -> Some (T Big_int)
+    | U_tiny_int -> Some (T U_tiny_int)
+    | U_small_int -> Some (T U_small_int)
+    | U_integer -> Some (T U_integer)
+    | U_big_int -> Some (T U_big_int)
+    | Float -> Some (T Float)
+    | Double -> Some (T Double)
+    | Timestamp -> Some (T Timestamp)
+    | Date -> Some (T Date)
+    | Time -> Some (T Time)
+    | Interval -> Some (T Interval)
+    | Huge_int -> Some (T Huge_int)
+    | Uhuge_int -> Some (T Uhuge_int)
+    | Var_char -> Some (T Var_char)
+    | Blob -> Some (T Blob)
+    | Decimal _
+    | Timestamp_s
+    | Timestamp_ms
+    | Timestamp_ns
+    | Enum _
+    | List _
+    | Struct _
+    | Map _
+    | Array _
+    | Uuid
+    | Union _
+    | Bit
+    | Time_tz
+    | Timestamp_tz
+    | Var_int -> None
+  ;;
+
   let to_c_type (type a) (t : a t) : a Ctypes.typ =
     match t with
     | Boolean -> bool
@@ -318,6 +358,29 @@ module Typed = struct
     | Uhuge_int -> Duckdb_stubs.Uhugeint.t
     | Var_char -> string
     | Blob -> string
+  ;;
+
+  let to_string_hum (type a) (t : a t) (value : a) : string =
+    match t with
+    | Boolean -> Bool.to_string value
+    | Tiny_int -> Int.to_string value
+    | Small_int -> Int.to_string value
+    | Integer -> Int32.to_string value
+    | Big_int -> Int64.to_string value
+    | U_tiny_int -> Unsigned.UInt8.to_string value
+    | U_small_int -> Unsigned.UInt16.to_string value
+    | U_integer -> Unsigned.UInt32.to_string value
+    | U_big_int -> Unsigned.UInt64.to_string value
+    | Float -> Float.to_string value
+    | Double -> Float.to_string value
+    | Timestamp -> failwith "Unimplemented"
+    | Date -> failwith "Unimplemented"
+    | Time -> failwith "Unimplemented"
+    | Interval -> failwith "Unimplemented"
+    | Huge_int -> failwith "Unimplemented"
+    | Uhuge_int -> failwith "Unimplemented"
+    | Var_char -> value
+    | Blob -> value
   ;;
 
   module List = struct
