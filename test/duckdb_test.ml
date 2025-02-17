@@ -33,7 +33,7 @@ let%expect_test "try to use closed connection" =
 ;;
 
 let print_result (result : Duckdb.Query_result.t) =
-  let n, fetch_result = Duckdb.Data_chunk.fetch_all result in
+  let n, fetch_result = Duckdb.Query_result.fetch_all result in
   let columns =
     Array.to_list fetch_result
     |> List.map ~f:(fun (name, packed_array) ->

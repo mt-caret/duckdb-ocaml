@@ -2,28 +2,11 @@ open! Core
 open! Ctypes
 
 type t =
-  { data_chunk : Duckdb_stubs.Data_chunk.t ptr
+  { data_chunk : Duckdb_stubs.Data_chunk.t ptr Resource.t
   ; length : int
   ; schema : (string * Type.t) array
   }
 [@@deriving fields ~getters]
-
-let fetch query_result ~f =
-  match
-    Duckdb_stubs.duckdb_fetch_chunk
-      (Query_result.Private.to_struct query_result |> Resource.get_exn)
-  with
-  | None -> f None
-  | Some chunk ->
-    let chunk = allocate Duckdb_stubs.Data_chunk.t chunk in
-    let length =
-      Duckdb_stubs.duckdb_data_chunk_get_size !@chunk |> Unsigned.UInt64.to_int
-    in
-    protect
-      ~f:(fun () ->
-        f (Some { data_chunk = chunk; length; schema = Query_result.schema query_result }))
-      ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
-;;
 
 let assert_all_valid vector ~len =
   match Duckdb_stubs.duckdb_vector_get_validity vector with
@@ -58,14 +41,14 @@ let get_exn' (type a) data_chunk ~length (type_ : a Type.Typed.t) idx : a array 
 ;;
 
 let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
-  get_exn' !@(t.data_chunk) ~length:t.length type_ idx
+  get_exn' !@(Resource.get_exn t.data_chunk) ~length:t.length type_ idx
 ;;
 
 let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
   (* TODO: should check that type lines up with schema *)
   let vector =
     Duckdb_stubs.duckdb_data_chunk_get_vector
-      !@(t.data_chunk)
+      !@(Resource.get_exn t.data_chunk)
       (Unsigned.UInt64.of_int idx)
   in
   let validity = Duckdb_stubs.duckdb_vector_get_validity vector in
@@ -83,35 +66,33 @@ let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
       | false -> None)
 ;;
 
-let fetch_all query_result =
-  (* TODO: This is super awkward... *)
-  let getters, collect =
-    Query_result.schema query_result
-    |> Array.mapi ~f:(fun i (name, type_) ->
-      match Type.Typed.of_untyped type_ with
-      | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
-      | Some (T type_) ->
-        let result = ref [] in
-        ( (fun t -> result := get_opt t type_ i :: !result)
-        , fun () -> name, Packed_column.T_opt (type_, Array.concat (List.rev !result)) ))
-    |> Array.unzip
-  in
-  let rec go accum =
-    match
-      fetch query_result ~f:(function
-        | None -> None
-        | Some t ->
-          Array.iter getters ~f:(fun getter -> getter t);
-          Some (length t))
-    with
-    | None -> accum
-    | Some n -> go (accum + n)
-  in
-  let total_length = go 0 in
-  total_length, Array.map collect ~f:(fun collect -> collect ())
-;;
+let free t ~here = Resource.free t.data_chunk ~here
 
 module Private = struct
+  let length (data_chunk : Duckdb_stubs.Data_chunk.t ptr) =
+    Duckdb_stubs.duckdb_data_chunk_get_size !@data_chunk |> Unsigned.UInt64.to_int
+  ;;
+
+  let create data_chunk ~schema =
+    let data_chunk = allocate Duckdb_stubs.Data_chunk.t data_chunk in
+    { data_chunk =
+        Resource.create
+          data_chunk
+          ~name:"Duckdb.Data_chunk"
+          ~free:Duckdb_stubs.duckdb_destroy_data_chunk
+    ; length = length data_chunk
+    ; schema
+    }
+  ;;
+
+  let create_do_not_free data_chunk ~schema =
+    let data_chunk = allocate Duckdb_stubs.Data_chunk.t data_chunk in
+    { data_chunk = Resource.create data_chunk ~name:"Duckdb.Data_chunk" ~free:ignore
+    ; length = length data_chunk
+    ; schema
+    }
+  ;;
+
   let to_ptr t = t.data_chunk
 
   let get_exn t =

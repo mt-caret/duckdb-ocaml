@@ -26,6 +26,46 @@ let schema (t : t) =
     name, type_)
 ;;
 
+let fetch (t : t) ~f =
+  let t' = Resource.get_exn t in
+  match Duckdb_stubs.duckdb_fetch_chunk t' with
+  | None -> f None
+  | Some data_chunk ->
+    Data_chunk.Private.create data_chunk ~schema:(schema t)
+    |> protectx
+         ~f:(fun data_chunk -> f (Some data_chunk))
+         ~finally:(fun data_chunk ->
+           Data_chunk.Private.to_ptr data_chunk |> Resource.free ~here:[%here])
+;;
+
+let fetch_all t =
+  (* TODO: This is super awkward... *)
+  let getters, collect =
+    schema t
+    |> Array.mapi ~f:(fun i (name, type_) ->
+      match Type.Typed.of_untyped type_ with
+      | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
+      | Some (T type_) ->
+        let result = ref [] in
+        ( (fun data_chunk -> result := Data_chunk.get_opt data_chunk type_ i :: !result)
+        , fun () -> name, Packed_column.T_opt (type_, Array.concat (List.rev !result)) ))
+    |> Array.unzip
+  in
+  let rec go accum =
+    match
+      fetch t ~f:(function
+        | None -> None
+        | Some data_chunk ->
+          Array.iter getters ~f:(fun getter -> getter data_chunk);
+          Some (Data_chunk.length data_chunk))
+    with
+    | None -> accum
+    | Some n -> go (accum + n)
+  in
+  let total_length = go 0 in
+  total_length, Array.map collect ~f:(fun collect -> collect ())
+;;
+
 module Private = struct
   let to_struct = Fn.id
 end
