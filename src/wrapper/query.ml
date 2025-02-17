@@ -8,55 +8,32 @@ module Error = struct
     }
   [@@deriving sexp, fields ~getters]
 
-  let to_error t = Error.create_s [%sexp (t : t)]
-end
-
-module Result = struct
-  type t =
-    { result : Duckdb_stubs.Result.t structure
-    ; schema : (string * Type.t) array
+  let create (result : Query_result.t) =
+    let result = Query_result.Private.to_struct result |> Resource.get_exn in
+    { kind = Duckdb_stubs.duckdb_result_error_type (addr result)
+    ; message = Duckdb_stubs.duckdb_result_error (addr result)
     }
-  [@@deriving fields ~getters]
-
-  let create result =
-    let schema =
-      Duckdb_stubs.duckdb_column_count (addr result)
-      |> Unsigned.UInt64.to_int
-      |> Array.init ~f:(fun i ->
-        let i = Unsigned.UInt64.of_int i in
-        let name = Duckdb_stubs.duckdb_column_name (addr result) i in
-        let type_ =
-          Duckdb_stubs.duckdb_column_logical_type (addr result) i
-          |> Type.Private.with_logical_type ~f:Type.of_logical_type_exn
-        in
-        name, type_)
-    in
-    { result; schema }
   ;;
 
-  let column_count t = Array.length t.schema
-
-  module Private = struct
-    let to_struct t = t.result
-  end
+  let to_error t = Error.create_s [%sexp (t : t)]
 end
 
 let run conn query ~f =
   let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
-  let duckdb_result = make Duckdb_stubs.Result.t in
-  match Duckdb_stubs.duckdb_query !@conn query (Some (addr duckdb_result)) with
+  let result = Query_result.create () in
+  match
+    Duckdb_stubs.duckdb_query
+      !@conn
+      query
+      (Some (addr (Resource.get_exn (Query_result.Private.to_struct result))))
+  with
   | DuckDBError ->
-    let error : Error.t =
-      { kind = Duckdb_stubs.duckdb_result_error_type (addr duckdb_result)
-      ; message = Duckdb_stubs.duckdb_result_error (addr duckdb_result)
-      }
-    in
-    Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
+    let error = Error.create result in
+    Resource.free (Query_result.Private.to_struct result) ~here:[%here];
     Error error
   | DuckDBSuccess ->
-    let result = Result.create duckdb_result in
     protectx result ~f ~finally:(fun result ->
-      Duckdb_stubs.duckdb_destroy_result (addr result.result))
+      Query_result.Private.to_struct result |> Resource.free ~here:[%here])
     |> Ok
 ;;
 
@@ -172,20 +149,19 @@ module Prepared = struct
 
   let run t ~f =
     let t = Resource.get_exn t in
-    let duckdb_result = make Duckdb_stubs.Result.t in
-    match Duckdb_stubs.duckdb_execute_prepared !@t (Some (addr duckdb_result)) with
+    let result = Query_result.create () in
+    match
+      Duckdb_stubs.duckdb_execute_prepared
+        !@t
+        (Some (addr (Resource.get_exn (Query_result.Private.to_struct result))))
+    with
     | DuckDBError ->
-      let error : Error.t =
-        { kind = Duckdb_stubs.duckdb_result_error_type (addr duckdb_result)
-        ; message = Duckdb_stubs.duckdb_result_error (addr duckdb_result)
-        }
-      in
-      Duckdb_stubs.duckdb_destroy_result (addr duckdb_result);
+      let error = Error.create result in
+      Resource.free (Query_result.Private.to_struct result) ~here:[%here];
       Error error
     | DuckDBSuccess ->
-      let result = Result.create duckdb_result in
       protectx result ~f ~finally:(fun result ->
-        Duckdb_stubs.duckdb_destroy_result (addr result.result))
+        Query_result.Private.to_struct result |> Resource.free ~here:[%here])
       |> Ok
   ;;
 

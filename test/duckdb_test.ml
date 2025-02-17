@@ -12,7 +12,7 @@ let%expect_test "try to use closed database" =
     Duckdb.Database.close db ~here:[%here];
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       Duckdb.Query.run_exn conn "SELECT 1" ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s)));
   [%expect
@@ -25,14 +25,14 @@ let%expect_test "try to use closed connection" =
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       Duckdb.Connection.disconnect conn ~here:[%here];
       Duckdb.Query.run_exn conn "SELECT 1" ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s)));
   [%expect
     {| ("Already freed" Duckdb.Connection (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
 ;;
 
-let print_result (result : Duckdb.Query.Result.t) =
+let print_result (result : Duckdb.Query_result.t) =
   let n, fetch_result = Duckdb.Data_chunk.fetch_all result in
   let columns =
     Array.to_list fetch_result
@@ -82,7 +82,7 @@ let%expect_test "get type and name" =
       Duckdb.Query.run_exn' conn "CREATE TABLE integers (i INTEGER, j INTEGER)";
       Duckdb.Query.run_exn' conn "INSERT INTO integers VALUES (3, 4), (5, 6), (7, NULL)";
       Duckdb.Query.run_exn conn "SELECT * FROM integers" ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s;
         [%expect {| ((i Integer) (j Integer)) |}])))
@@ -94,7 +94,7 @@ let%expect_test "logical types" =
       Duckdb.Query.run_exn' conn "CREATE TABLE integers (i INTEGER[], j INTEGER[3])";
       Duckdb.Query.run_exn' conn "INSERT INTO integers VALUES ([3,4,5], [6,7,8])";
       Duckdb.Query.run_exn conn "SELECT * FROM integers" ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s;
         [%expect {| ((i (List Integer)) (j (Array Integer 3))) |}])))
@@ -108,7 +108,7 @@ let%expect_test "nested logical types" =
         "SELECT {'birds': ['duck', 'goose', 'heron'], 'aliens': NULL, 'amphibians': \
          ['frog', 'toad']}"
         ~f:(fun res ->
-          Duckdb.Query.Result.schema res
+          Duckdb.Query_result.schema res
           |> [%sexp_of: (string * Duckdb.Type.t) array]
           |> print_s;
           [%expect
@@ -162,7 +162,7 @@ let%expect_test "prepared statements" =
       |> print_s;
       [%expect {| (Ok ()) |}];
       Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s;
         [%expect
@@ -180,7 +180,7 @@ let%expect_test "try to use closed prepared statement" =
       in
       Duckdb.Query.Prepared.destroy prepared ~here:[%here];
       Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
-        Duckdb.Query.Result.schema res
+        Duckdb.Query_result.schema res
         |> [%sexp_of: (string * Duckdb.Type.t) array]
         |> print_s)));
   [%expect

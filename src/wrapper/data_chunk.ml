@@ -9,7 +9,10 @@ type t =
 [@@deriving fields ~getters]
 
 let fetch query_result ~f =
-  match Duckdb_stubs.duckdb_fetch_chunk (Query.Result.Private.to_struct query_result) with
+  match
+    Duckdb_stubs.duckdb_fetch_chunk
+      (Query_result.Private.to_struct query_result |> Resource.get_exn)
+  with
   | None -> f None
   | Some chunk ->
     let chunk = allocate Duckdb_stubs.Data_chunk.t chunk in
@@ -18,7 +21,7 @@ let fetch query_result ~f =
     in
     protect
       ~f:(fun () ->
-        f (Some { data_chunk = chunk; length; schema = Query.Result.schema query_result }))
+        f (Some { data_chunk = chunk; length; schema = Query_result.schema query_result }))
       ~finally:(fun () -> Duckdb_stubs.duckdb_destroy_data_chunk chunk)
 ;;
 
@@ -83,7 +86,7 @@ let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
 let fetch_all query_result =
   (* TODO: This is super awkward... *)
   let getters, collect =
-    Query.Result.schema query_result
+    Query_result.schema query_result
     |> Array.mapi ~f:(fun i (name, type_) ->
       match Type.Typed.of_untyped type_ with
       | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
