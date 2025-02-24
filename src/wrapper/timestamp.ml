@@ -69,6 +69,7 @@ module S = struct
   ;;
 
   let to_time_ns t =
+    let%bind.Option seconds_since_epoch = to_seconds_since_epoch t |> Int64.to_int in
     let max_supported_ns =
       Time_ns.max_value_representable |> Time_ns.to_int_ns_since_epoch
     in
@@ -77,7 +78,6 @@ module S = struct
     in
     let max_supported_s = max_supported_ns / num_seconds_in_nanos in
     let min_supported_s = min_supported_ns / num_seconds_in_nanos in
-    let%bind.Option seconds_since_epoch = to_seconds_since_epoch t |> Int64.to_int in
     if seconds_since_epoch > max_supported_s || seconds_since_epoch < min_supported_s
     then None
     else Some (Time_ns.of_int_ns_since_epoch (seconds_since_epoch * num_seconds_in_nanos))
@@ -120,6 +120,7 @@ module Ms = struct
   ;;
 
   let to_time_ns t =
+    let%bind.Option millis_since_epoch = to_millis_since_epoch t |> Int64.to_int in
     let max_supported_ns =
       Time_ns.max_value_representable |> Time_ns.to_int_ns_since_epoch
     in
@@ -128,7 +129,6 @@ module Ms = struct
     in
     let max_supported_ms = max_supported_ns / num_millis_in_nanos in
     let min_supported_ms = min_supported_ns / num_millis_in_nanos in
-    let%bind.Option millis_since_epoch = to_millis_since_epoch t |> Int64.to_int in
     if millis_since_epoch > max_supported_ms || millis_since_epoch < min_supported_ms
     then None
     else Some (Time_ns.of_int_ns_since_epoch (millis_since_epoch * num_millis_in_nanos))
@@ -168,13 +168,13 @@ module Ns = struct
   ;;
 
   let to_time_ns t =
+    let%bind.Option nanos_since_epoch = to_nanos_since_epoch t |> Int64.to_int in
     let max_supported_ns =
       Time_ns.max_value_representable |> Time_ns.to_int_ns_since_epoch
     in
     let min_supported_ns =
       Time_ns.min_value_representable |> Time_ns.to_int_ns_since_epoch
     in
-    let%bind.Option nanos_since_epoch = to_nanos_since_epoch t |> Int64.to_int in
     if nanos_since_epoch > max_supported_ns || nanos_since_epoch < min_supported_ns
     then None
     else Some (Time_ns.of_int_ns_since_epoch nanos_since_epoch)
