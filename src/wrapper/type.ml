@@ -266,8 +266,8 @@ module Typed = struct
     | Float : float t
     | Double : float t
     | Timestamp : Timestamp.t t
-    | Date : Duckdb_stubs.Date.t Ctypes.structure t
-    | Time : Duckdb_stubs.Time.t Ctypes.structure t
+    | Date : Date_.t t
+    | Time : Time_.t t
     | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
     | Huge_int : Duckdb_stubs.Hugeint.t Ctypes.structure t
     | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
