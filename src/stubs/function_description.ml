@@ -119,6 +119,15 @@ module Functions (F : FOREIGN) = struct
       (Types.Prepared_statement.t @-> returning Types.State.t)
   ;;
 
+  let duckdb_bind_value =
+    foreign
+      "duckdb_bind_value"
+      (Types.Prepared_statement.t
+       @-> Types.idx_t
+       @-> Types.Value.t
+       @-> returning Types.State.t)
+  ;;
+
   let duckdb_bind_boolean =
     foreign
       "duckdb_bind_boolean"
@@ -268,6 +277,18 @@ module Functions (F : FOREIGN) = struct
     foreign
       "duckdb_execute_prepared"
       (Types.Prepared_statement.t @-> ptr_opt Types.Result.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_create_timestamp_s =
+    foreign "duckdb_create_timestamp_s" (Types.Timestamp_s.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp_ms =
+    foreign "duckdb_create_timestamp_ms" (Types.Timestamp_ms.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp_ns =
+    foreign "duckdb_create_timestamp_ns" (Types.Timestamp_ns.t @-> returning Types.Value.t)
   ;;
 
   let duckdb_data_chunk_get_size =

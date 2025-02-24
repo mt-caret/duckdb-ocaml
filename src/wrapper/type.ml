@@ -265,7 +265,7 @@ module Typed = struct
     | U_big_int : Unsigned.uint64 t
     | Float : float t
     | Double : float t
-    | Timestamp : Duckdb_stubs.Timestamp.t Ctypes.structure t
+    | Timestamp : Timestamp.t t
     | Date : Duckdb_stubs.Date.t Ctypes.structure t
     | Time : Duckdb_stubs.Time.t Ctypes.structure t
     | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
@@ -273,6 +273,9 @@ module Typed = struct
     | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
     | Var_char : string t
     | Blob : string t
+    | Timestamp_s : Timestamp.S.t t
+    | Timestamp_ms : Timestamp.Ms.t t
+    | Timestamp_ns : Timestamp.Ns.t t
 
   type packed = T : _ t -> packed
 
@@ -297,6 +300,9 @@ module Typed = struct
     | Uhuge_int -> Uhuge_int
     | Var_char -> Var_char
     | Blob -> Blob
+    | Timestamp_s -> Timestamp_s
+    | Timestamp_ms -> Timestamp_ms
+    | Timestamp_ns -> Timestamp_ns
   ;;
 
   let of_untyped (untyped : untyped) : packed option =
@@ -358,6 +364,9 @@ module Typed = struct
     | Uhuge_int -> Duckdb_stubs.Uhugeint.t
     | Var_char -> string
     | Blob -> string
+    | Timestamp_s -> Duckdb_stubs.Timestamp_s.t
+    | Timestamp_ms -> Duckdb_stubs.Timestamp_ms.t
+    | Timestamp_ns -> Duckdb_stubs.Timestamp_ns.t
   ;;
 
   let to_string_hum (type a) (t : a t) (value : a) : string =
@@ -381,6 +390,9 @@ module Typed = struct
     | Uhuge_int -> failwith "Unimplemented"
     | Var_char -> value
     | Blob -> value
+    | Timestamp_s -> failwith "Unimplemented"
+    | Timestamp_ms -> failwith "Unimplemented"
+    | Timestamp_ns -> failwith "Unimplemented"
   ;;
 
   module List = struct

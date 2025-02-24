@@ -58,7 +58,7 @@ module Typed : sig
     | U_big_int : Unsigned.uint64 t
     | Float : float t
     | Double : float t
-    | Timestamp : Duckdb_stubs.Timestamp.t Ctypes.structure t
+    | Timestamp : Timestamp.t t
     | Date : Duckdb_stubs.Date.t Ctypes.structure t
     | Time : Duckdb_stubs.Time.t Ctypes.structure t
     | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
@@ -66,6 +66,9 @@ module Typed : sig
     | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
     | Var_char : string t
     | Blob : string t
+    | Timestamp_s : Timestamp.S.t t
+    | Timestamp_ms : Timestamp.Ms.t t
+    | Timestamp_ns : Timestamp.Ns.t t
 
   type packed = T : _ t -> packed
 

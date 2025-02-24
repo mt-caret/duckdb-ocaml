@@ -440,6 +440,51 @@ module Types (F : TYPE) = struct
     let () = seal t_struct
   end
 
+  module Timestamp_s = struct
+    (* {[
+      //! TIMESTAMP_S values are stored as seconds since 1970-01-01.
+      typedef struct {
+        int64_t seconds;
+      } duckdb_timestamp_s;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_timestamp_s") "duckdb_timestamp_s"
+    let seconds : (int64, t structure) field = field t "seconds" int64_t
+    let () = seal t
+  end
+
+  module Timestamp_ms = struct
+    (* {[
+      //! TIMESTAMP_MS values are stored as milliseconds since 1970-01-01.
+      typedef struct {
+        int64_t millis;
+      } duckdb_timestamp_ms;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_timestamp_ms") "duckdb_timestamp_ms"
+    let millis : (int64, t structure) field = field t "millis" int64_t
+    let () = seal t
+  end
+
+  module Timestamp_ns = struct
+    (* {[
+      //! TIMESTAMP_NS values are stored as nanoseconds since 1970-01-01.
+      typedef struct {
+        int64_t nanos;
+      } duckdb_timestamp_ns;
+    ]} *)
+
+    type t
+
+    let t = typedef (structure "_duckdb_timestamp_ns") "duckdb_timestamp_ns"
+    let nanos : (int64, t structure) field = field t "nanos" int64_t
+    let () = seal t
+  end
+
   module Interval = struct
     (* {[
       typedef struct {

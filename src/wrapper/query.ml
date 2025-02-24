@@ -88,6 +88,27 @@ module Prepared = struct
         index
         (to_voidp (Ctypes_std_views.char_ptr_of_string value))
         (Unsigned.UInt64.of_int (String.length value))
+    | Timestamp_s ->
+      let duckdb_value =
+        allocate Duckdb_stubs.Value.t (Duckdb_stubs.duckdb_create_timestamp_s value)
+      in
+      let result = Duckdb_stubs.duckdb_bind_value !@t index !@duckdb_value in
+      Duckdb_stubs.duckdb_destroy_value duckdb_value;
+      result
+    | Timestamp_ms ->
+      let duckdb_value =
+        allocate Duckdb_stubs.Value.t (Duckdb_stubs.duckdb_create_timestamp_ms value)
+      in
+      let result = Duckdb_stubs.duckdb_bind_value !@t index !@duckdb_value in
+      Duckdb_stubs.duckdb_destroy_value duckdb_value;
+      result
+    | Timestamp_ns ->
+      let duckdb_value =
+        allocate Duckdb_stubs.Value.t (Duckdb_stubs.duckdb_create_timestamp_ns value)
+      in
+      let result = Duckdb_stubs.duckdb_bind_value !@t index !@duckdb_value in
+      Duckdb_stubs.duckdb_destroy_value duckdb_value;
+      result
   ;;
 
   let destroy = Resource.free
