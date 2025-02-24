@@ -8,8 +8,8 @@ module Error = struct
     }
   [@@deriving sexp, fields ~getters]
 
-  let create (result : Query_result.t) =
-    let result = Query_result.Private.to_struct result |> Resource.get_exn in
+  let create (result : Result_.t) =
+    let result = Result_.Private.to_struct result |> Resource.get_exn in
     { kind = Duckdb_stubs.duckdb_result_error_type (addr result)
     ; message = Duckdb_stubs.duckdb_result_error (addr result)
     }
@@ -20,20 +20,20 @@ end
 
 let run conn query ~f =
   let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
-  let result = Query_result.create () in
+  let result = Result_.create () in
   match
     Duckdb_stubs.duckdb_query
       !@conn
       query
-      (Some (addr (Resource.get_exn (Query_result.Private.to_struct result))))
+      (Some (addr (Resource.get_exn (Result_.Private.to_struct result))))
   with
   | DuckDBError ->
     let error = Error.create result in
-    Resource.free (Query_result.Private.to_struct result) ~here:[%here];
+    Resource.free (Result_.Private.to_struct result) ~here:[%here];
     Error error
   | DuckDBSuccess ->
     protectx result ~f ~finally:(fun result ->
-      Query_result.Private.to_struct result |> Resource.free ~here:[%here])
+      Result_.Private.to_struct result |> Resource.free ~here:[%here])
     |> Ok
 ;;
 
@@ -170,19 +170,19 @@ module Prepared = struct
 
   let run t ~f =
     let t = Resource.get_exn t in
-    let result = Query_result.create () in
+    let result = Result_.create () in
     match
       Duckdb_stubs.duckdb_execute_prepared
         !@t
-        (Some (addr (Resource.get_exn (Query_result.Private.to_struct result))))
+        (Some (addr (Resource.get_exn (Result_.Private.to_struct result))))
     with
     | DuckDBError ->
       let error = Error.create result in
-      Resource.free (Query_result.Private.to_struct result) ~here:[%here];
+      Resource.free (Result_.Private.to_struct result) ~here:[%here];
       Error error
     | DuckDBSuccess ->
       protectx result ~f ~finally:(fun result ->
-        Query_result.Private.to_struct result |> Resource.free ~here:[%here])
+        Result_.Private.to_struct result |> Resource.free ~here:[%here])
       |> Ok
   ;;
 
