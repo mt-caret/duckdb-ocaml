@@ -28,29 +28,8 @@ let%expect_test "try to use closed connection" =
     {| ("Already freed" Duckdb.Connection (first_freed_at test/duckdb_test.ml:LINE:COL)) |}]
 ;;
 
-let print_result (result : Duckdb.Result_.t) =
-  let n, fetch_result = Duckdb.Result_.fetch_all result in
-  let columns =
-    Array.to_list fetch_result
-    |> List.map ~f:(fun (name, packed_array) ->
-      let type_name =
-        (match packed_array with
-         | T (type_, _) -> Duckdb.Type.Typed.to_untyped type_
-         | T_opt (type_, _) -> Duckdb.Type.Typed.to_untyped type_)
-        |> [%sexp_of: Duckdb.Type.t]
-        |> Sexp.to_string
-      in
-      Ascii_table_kernel.Column.create [%string "%{name}\n%{type_name}"] (fun i ->
-        match packed_array with
-        | T (type_, array) -> Array.get array i |> Duckdb.Type.Typed.to_string_hum type_
-        | T_opt (type_, array) ->
-          (match Array.get array i with
-           | None -> "null"
-           | Some value -> Duckdb.Type.Typed.to_string_hum type_ value)))
-  in
-  List.range 0 n
-  |> Ascii_table_kernel.to_string_noattr columns ~bars:`Unicode
-  |> print_endline
+let print_result result =
+  Duckdb.Result_.to_string_hum result ~bars:`Unicode |> print_endline
 ;;
 
 let%expect_test "create, insert, and select" =

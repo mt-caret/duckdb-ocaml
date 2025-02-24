@@ -7,7 +7,6 @@
   duckdb
   duckdb_stubs
   expect_test_helpers_core
-  textutils.ascii_table_kernel
   core_unix.time_ns_unix)
  (inline_tests)
  (preprocess

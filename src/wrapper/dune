@@ -1,7 +1,12 @@
 (library
  (public_name duckdb)
  (name duckdb)
- (libraries core duckdb_stubs integers ctypes.foreign)
+ (libraries
+  core
+  ctypes.foreign
+  duckdb_stubs
+  integers
+  textutils.ascii_table_kernel)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
