@@ -61,7 +61,7 @@ module Typed : sig
     | Timestamp : Timestamp.t t
     | Date : Date_.t t
     | Time : Time_.t t
-    | Interval : Duckdb_stubs.Interval.t Ctypes.structure t
+    | Interval : Interval.t t
     | Huge_int : Duckdb_stubs.Hugeint.t Ctypes.structure t
     | Uhuge_int : Duckdb_stubs.Uhugeint.t Ctypes.structure t
     | Var_char : string t
