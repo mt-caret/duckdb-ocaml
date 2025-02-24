@@ -10,4 +10,4 @@ duckdb-ocaml provides bindings to the DuckDB C API. This is a work in progress.
 - [ ] PPX
 - [ ] table functions
 - [ ] replacement scans
-- [ ] add easy way to pretty-print result of query
+- [x] add easy way to pretty-print result of query
