@@ -11,6 +11,22 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_string_t_data" (ptr Types.String.t @-> returning string)
   ;;
 
+  let duckdb_hugeint_to_double =
+    foreign "duckdb_hugeint_to_double" (Types.Hugeint.t @-> returning double)
+  ;;
+
+  let duckdb_double_to_hugeint =
+    foreign "duckdb_double_to_hugeint" (double @-> returning Types.Hugeint.t)
+  ;;
+
+  let duckdb_uhugeint_to_double =
+    foreign "duckdb_uhugeint_to_double" (Types.Uhugeint.t @-> returning double)
+  ;;
+
+  let duckdb_double_to_uhugeint =
+    foreign "duckdb_double_to_uhugeint" (double @-> returning Types.Uhugeint.t)
+  ;;
+
   let duckdb_open =
     foreign "duckdb_open" (string @-> ptr Types.Database.t @-> returning Types.State.t)
   ;;
