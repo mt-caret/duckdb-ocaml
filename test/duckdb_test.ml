@@ -204,12 +204,10 @@ let%expect_test "scalar function registration" =
           "multiply_numbers_together"
           [ Small_int; Small_int; Small_int ]
           ~f:(fun _info chunk output ->
+            (* TODO: clean up *)
             let a = Duckdb.Data_chunk.Private.get_exn chunk Small_int 0 in
             let b = Duckdb.Data_chunk.Private.get_exn chunk Small_int 1 in
-            let data =
-              Duckdb_stubs.duckdb_vector_get_data output
-              |> from_voidp (Duckdb.Type.Typed.to_c_type Small_int)
-            in
+            let data = Duckdb_stubs.duckdb_vector_get_data output |> from_voidp int16_t in
             Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a * b))
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
@@ -222,5 +220,24 @@ let%expect_test "scalar function registration" =
         ├─────────────────────────────────┤
         │ 8                               │
         └─────────────────────────────────┘
+        |}]))
+;;
+
+let%expect_test "test querying short and long strings" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Query.run_exn'
+        conn
+        "CREATE TABLE strings (short_string VARCHAR, long_string VARCHAR)";
+      Duckdb.Query.run_exn' conn "INSERT INTO strings VALUES ('short', 'looooooooooong')";
+      Duckdb.Query.run_exn conn "SELECT * FROM strings" ~f:print_result;
+      [%expect
+        {|
+        ┌──────────────┬────────────────┐
+        │ short_string │ long_string    │
+        │ Var_char     │ Var_char       │
+        ├──────────────┼────────────────┤
+        │ short        │ looooooooooong │
+        └──────────────┴────────────────┘
         |}]))
 ;;

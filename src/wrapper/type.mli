@@ -74,7 +74,6 @@ module Typed : sig
 
   val to_untyped : 'a t -> untyped
   val of_untyped : untyped -> packed option
-  val to_c_type : 'a t -> 'a Ctypes_static.typ
   val to_string_hum : 'a t -> 'a -> string
 
   module List : sig
