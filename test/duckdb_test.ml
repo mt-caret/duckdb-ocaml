@@ -174,7 +174,6 @@ let%expect_test "appender" =
         |}]))
 ;;
 
-(* TODO: clean up example *)
 let%expect_test "scalar function registration" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
@@ -183,9 +182,10 @@ let%expect_test "scalar function registration" =
           "multiply_numbers_together"
           [ Small_int; Small_int; Small_int ]
           ~f:(fun _info chunk output ->
-            (* TODO: clean up *)
-            let a = Duckdb.Data_chunk.Private.get_exn chunk Small_int 0 in
-            let b = Duckdb.Data_chunk.Private.get_exn chunk Small_int 1 in
+            (* TODO: expose safer API *)
+            let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
+            let a = Duckdb.Data_chunk.get_exn chunk Small_int 0 in
+            let b = Duckdb.Data_chunk.get_exn chunk Small_int 1 in
             let data = Duckdb_stubs.duckdb_vector_get_data output |> from_voidp int16_t in
             Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a * b))
       in

@@ -4,7 +4,6 @@ open! Ctypes
 type t =
   { data_chunk : Duckdb_stubs.Data_chunk.t ptr Resource.t
   ; length : int
-  ; schema : (string * Type.t) array
   }
 [@@deriving fields ~getters]
 
@@ -60,19 +59,17 @@ module C_type_and_reader = struct
 end
 
 (* TODO: this is a mess, clean up *)
-let get_exn' (type a) data_chunk ~length (type_ : a Type.Typed.t) idx : a array =
+let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
   (* TODO: should check that type lines up with schema *)
   let vector =
-    Duckdb_stubs.duckdb_data_chunk_get_vector data_chunk (Unsigned.UInt64.of_int idx)
+    Duckdb_stubs.duckdb_data_chunk_get_vector
+      !@(Resource.get_exn t.data_chunk)
+      (Unsigned.UInt64.of_int idx)
   in
-  assert_all_valid vector ~len:length;
+  assert_all_valid vector ~len:t.length;
   let (T (c_type, read)) = C_type_and_reader.of_type type_ in
   let data = Duckdb_stubs.duckdb_vector_get_data vector |> from_voidp c_type in
-  Array.init length ~f:(fun i -> read !@(data +@ i))
-;;
-
-let get_exn (type a) t (type_ : a Type.Typed.t) idx : a array =
-  get_exn' !@(Resource.get_exn t.data_chunk) ~length:t.length type_ idx
+  Array.init t.length ~f:(fun i -> read !@(data +@ i))
 ;;
 
 let get_opt (type a) t (type_ : a Type.Typed.t) idx : a option array =
@@ -103,7 +100,7 @@ module Private = struct
     Duckdb_stubs.duckdb_data_chunk_get_size !@data_chunk |> Unsigned.UInt64.to_int
   ;;
 
-  let create data_chunk ~schema =
+  let create data_chunk =
     let data_chunk = allocate Duckdb_stubs.Data_chunk.t data_chunk in
     { data_chunk =
         Resource.create
@@ -111,23 +108,15 @@ module Private = struct
           ~name:"Duckdb.Data_chunk"
           ~free:Duckdb_stubs.duckdb_destroy_data_chunk
     ; length = length data_chunk
-    ; schema
     }
   ;;
 
-  let create_do_not_free data_chunk ~schema =
+  let create_do_not_free data_chunk =
     let data_chunk = allocate Duckdb_stubs.Data_chunk.t data_chunk in
     { data_chunk = Resource.create data_chunk ~name:"Duckdb.Data_chunk" ~free:ignore
     ; length = length data_chunk
-    ; schema
     }
   ;;
 
   let to_ptr t = t.data_chunk
-
-  let get_exn t =
-    get_exn'
-      t
-      ~length:(Duckdb_stubs.duckdb_data_chunk_get_size t |> Unsigned.UInt64.to_int)
-  ;;
 end
