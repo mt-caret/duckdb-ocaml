@@ -1,7 +1,7 @@
 open! Core
 open! Ctypes
 
-type t = Duckdb_stubs.Timestamp.t Ctypes.structure
+type t = Duckdb_stubs.Timestamp.t structure
 
 let to_micros_since_epoch (t : t) = getf t Duckdb_stubs.Timestamp.micros
 let sexp_of_t t = [%sexp { micros : int64 = to_micros_since_epoch t }]

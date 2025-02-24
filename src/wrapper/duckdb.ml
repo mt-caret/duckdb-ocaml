@@ -5,6 +5,7 @@ module Database = Database
 module Date_ = Date_
 module Function = Function
 module Heterogeneous_list = Heterogeneous_list
+module Interval = Interval
 module Query = Query
 module Resource = Resource
 module Result_ = Result_

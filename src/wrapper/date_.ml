@@ -1,7 +1,7 @@
 open! Core
 open! Ctypes
 
-type t = Duckdb_stubs.Date.t Ctypes.structure
+type t = Duckdb_stubs.Date.t structure
 
 let to_days (t : t) = getf t Duckdb_stubs.Date.days
 let sexp_of_t t = [%sexp { days : int32 = to_days t }]
