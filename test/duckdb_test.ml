@@ -186,8 +186,7 @@ let%expect_test "scalar function registration" =
             let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
             let a = Duckdb.Data_chunk.get_exn chunk Small_int 0 in
             let b = Duckdb.Data_chunk.get_exn chunk Small_int 1 in
-            let data = Duckdb_stubs.duckdb_vector_get_data output |> from_voidp int16_t in
-            Array.zip_exn a b |> Array.iteri ~f:(fun i (a, b) -> data +@ i <-@ a * b))
+            Array.map2_exn a b ~f:( * ) |> Duckdb.Vector.set_array output Small_int)
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;

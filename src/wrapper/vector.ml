@@ -75,3 +75,33 @@ let to_option_array (type a) t (type_ : a Type.Typed.t) ~length : a option array
       | true -> Some (read !@(data +@ i))
       | false -> None)
 ;;
+
+let set_array (type a) t (type_ : a Type.Typed.t) (values : a array) =
+  let (c_type : a Ctypes.typ) =
+    match type_ with
+    | Boolean -> bool
+    | Tiny_int -> int8_t
+    | Small_int -> int16_t
+    | Integer -> int32_t
+    | Big_int -> int64_t
+    | U_tiny_int -> uint8_t
+    | U_small_int -> uint16_t
+    | U_integer -> uint32_t
+    | U_big_int -> uint64_t
+    | Float -> float
+    | Double -> double
+    | Timestamp -> Duckdb_stubs.Timestamp.t
+    | Date -> Duckdb_stubs.Date.t
+    | Time -> Duckdb_stubs.Time.t
+    | Interval -> Duckdb_stubs.Interval.t
+    | Huge_int -> Duckdb_stubs.Hugeint.t
+    | Uhuge_int -> Duckdb_stubs.Uhugeint.t
+    | Var_char -> failwith "Var_char is not writable"
+    | Blob -> failwith "Blob is not writable"
+    | Timestamp_s -> Duckdb_stubs.Timestamp_s.t
+    | Timestamp_ms -> Duckdb_stubs.Timestamp_ms.t
+    | Timestamp_ns -> Duckdb_stubs.Timestamp_ns.t
+  in
+  let data = Duckdb_stubs.duckdb_vector_get_data t |> from_voidp c_type in
+  Array.iteri values ~f:(fun i value -> data +@ i <-@ value)
+;;
