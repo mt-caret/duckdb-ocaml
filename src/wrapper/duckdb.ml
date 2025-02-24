@@ -14,3 +14,4 @@ module Time_ = Time_
 module Timestamp = Timestamp
 module Type = Type
 module Uhugeint = Uhugeint
+module Vector = Vector
