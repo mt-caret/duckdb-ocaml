@@ -680,4 +680,10 @@ module Functions (F : FOREIGN) = struct
       "duckdb_register_scalar_function"
       (Types.Connection.t @-> Types.Scalar_function.t @-> returning Types.State.t)
   ;;
+
+  let duckdb_scalar_function_set_error =
+    foreign
+      "duckdb_scalar_function_set_error"
+      (Types.Function_info.t @-> string @-> returning void)
+  ;;
 end

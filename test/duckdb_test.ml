@@ -201,6 +201,25 @@ let%expect_test "scalar function registration" =
         |}]))
 ;;
 
+let%expect_test "scalar function raises an exception" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let scalar_function =
+        Duckdb.Function.Scalar.create
+          "multiply_numbers_together"
+          [ Small_int; Small_int; Small_int ]
+          ~f:(fun _info _chunk _output -> raise_s [%message "This is a test exception"])
+      in
+      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+        Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result);
+      [%expect
+        {|
+        ((kind DUCKDB_ERROR_INVALID_INPUT)
+         (message "Invalid Input Error: \"This is a test exception\""))
+        |}]))
+;;
+
 let%expect_test "test querying short and long strings" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->

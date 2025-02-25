@@ -23,7 +23,12 @@ module Scalar = struct
         Duckdb_stubs.Scalar_function.t
         (Duckdb_stubs.duckdb_create_scalar_function ())
     in
-    let f = F.of_fun f in
+    let f =
+      F.of_fun (fun info chunk output ->
+        try f info chunk output with
+        | exn ->
+          Duckdb_stubs.duckdb_scalar_function_set_error info (Exn.to_string_mach exn))
+    in
     Duckdb_stubs.duckdb_scalar_function_set_name !@scalar_function name;
     List.iteri types ~f:(fun i t ->
       Type.to_logical_type t
