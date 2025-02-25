@@ -27,7 +27,14 @@ module Scalar = struct
       F.of_fun (fun info chunk output ->
         try f info chunk output with
         | exn ->
-          Duckdb_stubs.duckdb_scalar_function_set_error info (Exn.to_string_mach exn))
+          let error =
+            Exn.to_string_mach exn
+            ^
+            match Backtrace.Exn.most_recent_for_exn exn with
+            | Some backtrace -> [%string "\n%{backtrace#Backtrace}"]
+            | None -> ""
+          in
+          Duckdb_stubs.duckdb_scalar_function_set_error info error)
     in
     Duckdb_stubs.duckdb_scalar_function_set_name !@scalar_function name;
     List.iteri types ~f:(fun i t ->

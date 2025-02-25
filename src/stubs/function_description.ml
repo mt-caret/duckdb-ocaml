@@ -325,6 +325,12 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_vector_get_validity" (Types.Vector.t @-> returning (ptr_opt uint64_t))
   ;;
 
+  let duckdb_vector_assign_string_element_len =
+    foreign
+      "duckdb_vector_assign_string_element_len"
+      (Types.Vector.t @-> Types.idx_t @-> string @-> Types.idx_t @-> returning void)
+  ;;
+
   let duckdb_validity_row_is_valid =
     foreign
       "duckdb_validity_row_is_valid"
