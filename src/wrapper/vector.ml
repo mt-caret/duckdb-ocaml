@@ -45,9 +45,19 @@ module C_type_and_reader = struct
     | Huge_int -> T (Duckdb_stubs.Hugeint.t, Fn.id)
     | Uhuge_int -> T (Duckdb_stubs.Uhugeint.t, Fn.id)
     | Var_char ->
-      T (Duckdb_stubs.String.t, fun s -> Duckdb_stubs.duckdb_string_t_data (addr s))
+      T
+        ( Duckdb_stubs.String.t
+        , fun s ->
+            Ctypes.string_from_ptr
+              (Duckdb_stubs.duckdb_string_t_data (addr s))
+              ~length:(Duckdb_stubs.duckdb_string_t_length s |> Unsigned.UInt32.to_int) )
     | Blob ->
-      T (Duckdb_stubs.String.t, fun s -> Duckdb_stubs.duckdb_string_t_data (addr s))
+      T
+        ( Duckdb_stubs.String.t
+        , fun s ->
+            Ctypes.string_from_ptr
+              (Duckdb_stubs.duckdb_string_t_data (addr s))
+              ~length:(Duckdb_stubs.duckdb_string_t_length s |> Unsigned.UInt32.to_int) )
     | Timestamp_s -> T (Duckdb_stubs.Timestamp_s.t, Fn.id)
     | Timestamp_ms -> T (Duckdb_stubs.Timestamp_ms.t, Fn.id)
     | Timestamp_ns -> T (Duckdb_stubs.Timestamp_ns.t, Fn.id)

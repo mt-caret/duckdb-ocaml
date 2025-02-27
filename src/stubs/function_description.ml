@@ -7,8 +7,12 @@ module Functions (F : FOREIGN) = struct
   let duckdb_library_version = foreign "duckdb_library_version" (void @-> returning string)
   let duckdb_free = foreign "duckdb_free" (ptr void @-> returning void)
 
+  let duckdb_string_t_length =
+    foreign "duckdb_string_t_length" (Types.String.t @-> returning uint32_t)
+  ;;
+
   let duckdb_string_t_data =
-    foreign "duckdb_string_t_data" (ptr Types.String.t @-> returning string)
+    foreign "duckdb_string_t_data" (ptr Types.String.t @-> returning (ptr (const char)))
   ;;
 
   let duckdb_hugeint_to_double =
