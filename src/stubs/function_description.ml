@@ -350,6 +350,10 @@ module Functions (F : FOREIGN) = struct
        @-> returning Types.Value.t)
   ;;
 
+  let duckdb_create_null_value =
+    foreign "duckdb_create_null_value" (void @-> returning Types.Value.t)
+  ;;
+
   let duckdb_create_logical_type =
     foreign "duckdb_create_logical_type" (Types.Type.t @-> returning Types.Logical_type.t)
   ;;
