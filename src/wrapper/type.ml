@@ -276,11 +276,11 @@ module Typed = struct
     | Timestamp_s : Timestamp.S.t t
     | Timestamp_ms : Timestamp.Ms.t t
     | Timestamp_ns : Timestamp.Ns.t t
+    | List : 'a t -> 'a list t
 
   type packed = T : _ t -> packed
 
-  let to_untyped (type a) (t : a t) : untyped =
-    match t with
+  let rec to_untyped : type a. a t -> untyped = function
     | Boolean -> Boolean
     | Tiny_int -> Tiny_int
     | Small_int -> Small_int
@@ -303,10 +303,10 @@ module Typed = struct
     | Timestamp_s -> Timestamp_s
     | Timestamp_ms -> Timestamp_ms
     | Timestamp_ns -> Timestamp_ns
+    | List child -> List (to_untyped child)
   ;;
 
-  let of_untyped (untyped : untyped) : packed option =
-    match untyped with
+  let rec of_untyped : untyped -> packed option = function
     | Boolean -> Some (T Boolean)
     | Tiny_int -> Some (T Tiny_int)
     | Small_int -> Some (T Small_int)
@@ -326,12 +326,12 @@ module Typed = struct
     | Uhuge_int -> Some (T Uhuge_int)
     | Var_char -> Some (T Var_char)
     | Blob -> Some (T Blob)
+    | Timestamp_s -> Some (T Timestamp_s)
+    | Timestamp_ms -> Some (T Timestamp_ms)
+    | Timestamp_ns -> Some (T Timestamp_ns)
+    | List child -> of_untyped child |> Option.map ~f:(fun (T child) -> T (List child))
     | Decimal _
-    | Timestamp_s
-    | Timestamp_ms
-    | Timestamp_ns
     | Enum _
-    | List _
     | Struct _
     | Map _
     | Array _
@@ -343,7 +343,8 @@ module Typed = struct
     | Var_int -> None
   ;;
 
-  let to_string_hum (type a) (t : a t) (value : a) : string =
+  let rec to_string_hum : type a. a t -> a -> string =
+    fun t value ->
     match t with
     | Boolean -> Bool.to_string value
     | Tiny_int -> Int.to_string value
@@ -367,6 +368,9 @@ module Typed = struct
     | Timestamp_s -> failwith "Unimplemented"
     | Timestamp_ms -> failwith "Unimplemented"
     | Timestamp_ns -> failwith "Unimplemented"
+    | List child ->
+      let inner = List.map ~f:(to_string_hum child) value |> String.concat ~sep:", " in
+      [%string "[ %{inner} ]"]
   ;;
 
   module List = struct

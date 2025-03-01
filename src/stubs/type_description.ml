@@ -605,6 +605,15 @@ module Types (F : TYPE) = struct
     let () = seal t
   end
 
+  module List_entry = struct
+    type t
+
+    let t : t structure typ = typedef (structure "_duckdb_list_entry") "duckdb_list_entry"
+    let offset : (Unsigned.UInt64.t, t structure) field = field t "offset" uint64_t
+    let length : (Unsigned.UInt64.t, t structure) field = field t "length" uint64_t
+    let () = seal t
+  end
+
   module Column = struct
     type t
 

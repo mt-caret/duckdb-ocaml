@@ -69,6 +69,7 @@ module Typed : sig
     | Timestamp_s : Timestamp.S.t t
     | Timestamp_ms : Timestamp.Ms.t t
     | Timestamp_ns : Timestamp.Ns.t t
+    | List : 'a t -> 'a list t
 
   type packed = T : _ t -> packed
 

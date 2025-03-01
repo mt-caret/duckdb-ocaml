@@ -299,18 +299,6 @@ module Functions (F : FOREIGN) = struct
       (Types.Prepared_statement.t @-> ptr_opt Types.Result.t @-> returning Types.State.t)
   ;;
 
-  let duckdb_create_timestamp_s =
-    foreign "duckdb_create_timestamp_s" (Types.Timestamp_s.t @-> returning Types.Value.t)
-  ;;
-
-  let duckdb_create_timestamp_ms =
-    foreign "duckdb_create_timestamp_ms" (Types.Timestamp_ms.t @-> returning Types.Value.t)
-  ;;
-
-  let duckdb_create_timestamp_ns =
-    foreign "duckdb_create_timestamp_ns" (Types.Timestamp_ns.t @-> returning Types.Value.t)
-  ;;
-
   let duckdb_data_chunk_get_size =
     foreign "duckdb_data_chunk_get_size" (Types.Data_chunk.t @-> returning Types.idx_t)
   ;;
@@ -335,6 +323,14 @@ module Functions (F : FOREIGN) = struct
       (Types.Vector.t @-> Types.idx_t @-> string @-> Types.idx_t @-> returning void)
   ;;
 
+  let duckdb_list_vector_get_child =
+    foreign "duckdb_list_vector_get_child" (Types.Vector.t @-> returning Types.Vector.t)
+  ;;
+
+  let duckdb_list_vector_get_size =
+    foreign "duckdb_list_vector_get_size" (Types.Vector.t @-> returning Types.idx_t)
+  ;;
+
   let duckdb_validity_row_is_valid =
     foreign
       "duckdb_validity_row_is_valid"
@@ -343,6 +339,15 @@ module Functions (F : FOREIGN) = struct
 
   let duckdb_destroy_data_chunk =
     foreign "duckdb_destroy_data_chunk" (ptr Types.Data_chunk.t @-> returning void)
+  ;;
+
+  let duckdb_create_list_value =
+    foreign
+      "duckdb_create_list_value"
+      (Types.Logical_type.t
+       @-> ptr_opt Types.Value.t
+       @-> Types.idx_t
+       @-> returning Types.Value.t)
   ;;
 
   let duckdb_create_logical_type =
@@ -489,6 +494,92 @@ module Functions (F : FOREIGN) = struct
 
   let duckdb_destroy_value =
     foreign "duckdb_destroy_value" (ptr Types.Value.t @-> returning void)
+  ;;
+
+  let duckdb_create_varchar =
+    foreign "duckdb_create_varchar" (string @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_bool = foreign "duckdb_create_bool" (bool @-> returning Types.Value.t)
+
+  let duckdb_create_int8 =
+    foreign "duckdb_create_int8" (int8_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_uint8 =
+    foreign "duckdb_create_uint8" (uint8_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_int16 =
+    foreign "duckdb_create_int16" (int16_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_uint16 =
+    foreign "duckdb_create_uint16" (uint16_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_int32 =
+    foreign "duckdb_create_int32" (int32_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_uint32 =
+    foreign "duckdb_create_uint32" (uint32_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_uint64 =
+    foreign "duckdb_create_uint64" (uint64_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_int64 =
+    foreign "duckdb_create_int64" (int64_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_hugeint =
+    foreign "duckdb_create_hugeint" (Types.Hugeint.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_uhugeint =
+    foreign "duckdb_create_uhugeint" (Types.Uhugeint.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_float =
+    foreign "duckdb_create_float" (float @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_double =
+    foreign "duckdb_create_double" (double @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_date =
+    foreign "duckdb_create_date" (Types.Date.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_time =
+    foreign "duckdb_create_time" (Types.Time.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp =
+    foreign "duckdb_create_timestamp" (Types.Timestamp.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp_s =
+    foreign "duckdb_create_timestamp_s" (Types.Timestamp_s.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp_ms =
+    foreign "duckdb_create_timestamp_ms" (Types.Timestamp_ms.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_timestamp_ns =
+    foreign "duckdb_create_timestamp_ns" (Types.Timestamp_ns.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_interval =
+    foreign "duckdb_create_interval" (Types.Interval.t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_create_blob =
+    foreign "duckdb_create_blob" (ptr uint8_t @-> Types.idx_t @-> returning Types.Value.t)
   ;;
 
   let duckdb_create_decimal =
