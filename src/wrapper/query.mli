@@ -16,7 +16,7 @@ module Prepared : sig
   module Parameters : sig
     type t =
       | [] : t
-      | ( :: ) : ('a Type.Typed.t * 'a) * t -> t
+      | ( :: ) : ('a Type.Typed_non_null.t * 'a) * t -> t
   end
 
   type t

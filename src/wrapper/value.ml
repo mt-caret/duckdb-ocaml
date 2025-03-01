@@ -3,7 +3,7 @@ open! Ctypes
 
 type t = Duckdb_stubs.Value.t
 
-let rec create : type a. a Type.Typed.t -> a -> t =
+let rec create : type a. a Type.Typed_non_null.t -> a -> t =
   fun type_ value ->
   match type_ with
   | Boolean -> Duckdb_stubs.duckdb_create_bool value
@@ -35,7 +35,7 @@ let rec create : type a. a Type.Typed.t -> a -> t =
     let count = List.length value in
     let value_ptr = allocate_n Duckdb_stubs.Value.t ~count in
     List.iteri value ~f:(fun i value -> value_ptr +@ i <-@ create child value);
-    Type.Typed.to_untyped child
+    Type.Typed_non_null.to_untyped child
     |> Type.to_logical_type
     |> Type.Private.with_logical_type ~f:(fun logical_type ->
       let t =

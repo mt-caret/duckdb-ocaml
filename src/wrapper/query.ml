@@ -51,7 +51,7 @@ module Prepared = struct
   module Parameters = struct
     type t =
       | [] : t
-      | ( :: ) : ('a Type.Typed.t * 'a) * t -> t
+      | ( :: ) : ('a Type.Typed_non_null.t * 'a) * t -> t
 
     let rec length = function
       | [] -> 0
@@ -61,7 +61,7 @@ module Prepared = struct
 
   type t = Duckdb_stubs.Prepared_statement.t ptr Resource.t
 
-  let bind (type a) t index (type_ : a Type.Typed.t) (value : a) =
+  let bind (type a) t index (type_ : a Type.Typed_non_null.t) (value : a) =
     let index = Unsigned.UInt64.of_int index in
     match type_ with
     | Boolean -> Duckdb_stubs.duckdb_bind_boolean !@t index value

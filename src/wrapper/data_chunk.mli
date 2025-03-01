@@ -3,7 +3,7 @@ open! Core
 type t
 
 val length : t -> int
-val get_exn : t -> 'a Type.Typed.t -> int -> 'a array
+val get_exn : t -> 'a Type.Typed_non_null.t -> int -> 'a array
 val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 val free : t -> here:Source_code_position.t -> unit
 

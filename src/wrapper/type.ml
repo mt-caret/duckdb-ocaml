@@ -1,5 +1,6 @@
 open! Core
 open! Ctypes
+include Type_intf
 
 type t =
   | Boolean
@@ -249,7 +250,12 @@ let rec to_logical_type (t : t) : Duckdb_stubs.Logical_type.t =
         Duckdb_stubs.duckdb_create_map_type key_logical_type value_logical_type))
 ;;
 
-module Typed = struct
+module Make_typed (T : sig
+    type !'a optional
+
+    val to_string_hum : 'a optional -> f:('a -> string) -> string
+  end) =
+struct
   type untyped = t
 
   (* TODO: add more types *)
@@ -276,7 +282,7 @@ module Typed = struct
     | Timestamp_s : Timestamp.S.t t
     | Timestamp_ms : Timestamp.Ms.t t
     | Timestamp_ns : Timestamp.Ns.t t
-    | List : 'a t -> 'a list t
+    | List : 'a t -> 'a T.optional list t
 
   type packed = T : _ t -> packed
 
@@ -369,7 +375,10 @@ module Typed = struct
     | Timestamp_ms -> failwith "Unimplemented"
     | Timestamp_ns -> failwith "Unimplemented"
     | List child ->
-      let inner = List.map ~f:(to_string_hum child) value |> String.concat ~sep:", " in
+      let inner =
+        List.map ~f:(T.to_string_hum ~f:(to_string_hum child)) value
+        |> String.concat ~sep:", "
+      in
       [%string "[ %{inner} ]"]
   ;;
 
@@ -377,7 +386,7 @@ module Typed = struct
     type 'a type_ = 'a t
 
     type _ t =
-      | [] : Nothing.t t
+      | [] : unit t
       | ( :: ) : 'a type_ * 'b t -> ('a * 'b) t
 
     let to_untyped =
@@ -391,6 +400,22 @@ module Typed = struct
     ;;
   end
 end
+
+module Typed_non_null = Make_typed (struct
+    type 'a optional = 'a
+
+    let to_string_hum t ~f = f t
+  end)
+
+module Typed = Make_typed (struct
+    type 'a optional = 'a option
+
+    let to_string_hum t ~f =
+      match t with
+      | None -> ""
+      | Some t -> f t
+    ;;
+  end)
 
 module Private = struct
   let with_logical_type = with_logical_type

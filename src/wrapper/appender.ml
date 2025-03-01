@@ -60,7 +60,7 @@ let column_types t =
   List.init count ~f:(fun i -> column_type t i)
 ;;
 
-let append_value (type a) t (type_ : a Type.Typed.t) (value : a) =
+let append_value (type a) t (type_ : a Type.Typed_non_null.t) (value : a) =
   let t = Resource.get_exn t in
   match type_ with
   | Boolean -> Duckdb_stubs.duckdb_append_bool !@t value
@@ -109,9 +109,10 @@ let append_value (type a) t (type_ : a Type.Typed.t) (value : a) =
 ;;
 
 let rec append_row
-  : type a. t -> a Type.Typed.List.t -> a Heterogeneous_list.t -> (unit, string) result
+  : type a.
+    t -> a Type.Typed_non_null.List.t -> a Heterogeneous_list.t -> (unit, string) result
   =
-  fun (type a) t (types : a Type.Typed.List.t) (row : a Heterogeneous_list.t) ->
+  fun (type a) t (types : a Type.Typed_non_null.List.t) (row : a Heterogeneous_list.t) ->
   match types, row with
   | [], [] ->
     let t' = Resource.get_exn t in
@@ -121,9 +122,14 @@ let rec append_row
     append_row t types row
 ;;
 
-let append (type a) t (types : a Type.Typed.List.t) (rows : a Heterogeneous_list.t list) =
+let append
+      (type a)
+      t
+      (types : a Type.Typed_non_null.List.t)
+      (rows : a Heterogeneous_list.t list)
+  =
   let expected_types = column_types t in
-  let argument_types = Type.Typed.List.to_untyped types in
+  let argument_types = Type.Typed_non_null.List.to_untyped types in
   if not ([%equal: Type.t list] expected_types argument_types)
   then
     raise_s

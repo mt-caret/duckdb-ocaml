@@ -3,5 +3,5 @@
 open! Core
 
 type 'a t =
-  | [] : Nothing.t t
+  | [] : unit t
   | ( :: ) : 'a * 'b t -> ('a * 'b) t

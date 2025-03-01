@@ -12,8 +12,12 @@ val column_types : t -> Type.t list
 (* TODO: add a version that takes an ['a option Heterogeneous_list.t]. *)
 val append
   :  t
-  -> 'a Type.Typed.List.t
+  -> 'a Type.Typed_non_null.List.t
   -> 'a Heterogeneous_list.t list
   -> (unit, string) result
 
-val append_exn : t -> 'a Type.Typed.List.t -> 'a Heterogeneous_list.t list -> unit
+val append_exn
+  :  t
+  -> 'a Type.Typed_non_null.List.t
+  -> 'a Heterogeneous_list.t list
+  -> unit
