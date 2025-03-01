@@ -246,6 +246,33 @@ let%expect_test "scalar function string concatenation" =
         |}]))
 ;;
 
+let%expect_test "scalar function tupling" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let scalar_function =
+        Duckdb.Function.Scalar.create
+          "string_concat"
+          [ Var_char; Var_char; List Var_char ]
+          ~f:(fun _info chunk output ->
+            let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
+            let a = Duckdb.Data_chunk.get_exn chunk Var_char 0 in
+            let b = Duckdb.Data_chunk.get_exn chunk Var_char 1 in
+            Array.map2_exn a b ~f:(fun a b -> [ a; b ])
+            |> Duckdb.Vector.set_array output (List Var_char))
+      in
+      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
+      [%expect
+        {|
+        ┌──────────────────────────────────┐
+        │ string_concat('hello', ' world') │
+        │ (List Var_char)                  │
+        ├──────────────────────────────────┤
+        │ [ hello,  world ]                │
+        └──────────────────────────────────┘
+        |}]))
+;;
+
 let%expect_test "test querying short and long strings" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->

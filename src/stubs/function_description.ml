@@ -331,6 +331,18 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_list_vector_get_size" (Types.Vector.t @-> returning Types.idx_t)
   ;;
 
+  let duckdb_list_vector_set_size =
+    foreign
+      "duckdb_list_vector_set_size"
+      (Types.Vector.t @-> Types.idx_t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_list_vector_reserve =
+    foreign
+      "duckdb_list_vector_reserve"
+      (Types.Vector.t @-> Types.idx_t @-> returning Types.State.t)
+  ;;
+
   let duckdb_validity_row_is_valid =
     foreign
       "duckdb_validity_row_is_valid"

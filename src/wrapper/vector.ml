@@ -182,9 +182,11 @@ module How_to_write = struct
   type 'a t =
     | Direct : 'a Ctypes.typ -> 'a t
     | String : string t
+    | List : 'a Type.Typed_non_null.t -> 'a list t
 end
 
-let set_array (type a) t (type_ : a Type.Typed_non_null.t) (values : a array) =
+let rec set_array : type a. t -> a Duckdb__Type.Typed_non_null.t -> a array -> unit =
+  fun t type_ values ->
   let (how_to_write : a How_to_write.t) =
     match type_ with
     | Boolean -> Direct bool
@@ -209,7 +211,7 @@ let set_array (type a) t (type_ : a Type.Typed_non_null.t) (values : a array) =
     | Timestamp_s -> Direct Duckdb_stubs.Timestamp_s.t
     | Timestamp_ms -> Direct Duckdb_stubs.Timestamp_ms.t
     | Timestamp_ns -> Direct Duckdb_stubs.Timestamp_ns.t
-    | List _child -> failwith "Unimplemented"
+    | List child -> List child
   in
   match how_to_write with
   | Direct c_type ->
@@ -222,4 +224,35 @@ let set_array (type a) t (type_ : a Type.Typed_non_null.t) (values : a array) =
         (Unsigned.UInt64.of_int i)
         value
         (Unsigned.UInt64.of_int (String.length value)))
+  | List child ->
+    let child_length = Array.sum (module Int) values ~f:List.length in
+    (match
+       Duckdb_stubs.duckdb_list_vector_reserve t (Unsigned.UInt64.of_int child_length)
+     with
+     | DuckDBError ->
+       raise_s
+         [%message
+           "duckdb_list_vector_reserve unexpectedly failed"
+             ~type_:(Type.Typed_non_null.to_untyped type_ : Type.t)]
+     | DuckDBSuccess -> ());
+    let child_vector = Duckdb_stubs.duckdb_list_vector_get_child t in
+    set_array child_vector child (Array.concat_map values ~f:List.to_array);
+    (match
+       Duckdb_stubs.duckdb_list_vector_set_size t (Unsigned.UInt64.of_int child_length)
+     with
+     | DuckDBError ->
+       raise_s
+         [%message
+           "duckdb_list_vector_set_size unexpectedly failed"
+             ~type_:(Type.Typed_non_null.to_untyped type_ : Type.t)]
+     | DuckDBSuccess -> ());
+    let data =
+      Duckdb_stubs.duckdb_vector_get_data t |> from_voidp Duckdb_stubs.List_entry.t
+    in
+    Array.foldi values ~init:0 ~f:(fun i offset value ->
+      let length = List.length value in
+      data +@ i |-> Duckdb_stubs.List_entry.offset <-@ Unsigned.UInt64.of_int offset;
+      data +@ i |-> Duckdb_stubs.List_entry.length <-@ Unsigned.UInt64.of_int length;
+      offset + length)
+    |> (ignore : int -> unit)
 ;;
