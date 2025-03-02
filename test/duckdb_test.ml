@@ -180,13 +180,8 @@ let%expect_test "scalar function registration" =
       let scalar_function =
         Duckdb.Function.Scalar.create
           "multiply_numbers_together"
-          [ Small_int; Small_int; Small_int ]
-          ~f:(fun _info chunk output ->
-            (* TODO: expose safer API *)
-            let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
-            let a = Duckdb.Data_chunk.get_exn chunk Small_int 0 in
-            let b = Duckdb.Data_chunk.get_exn chunk Small_int 1 in
-            Array.map2_exn a b ~f:( * ) |> Duckdb.Vector.set_array output Small_int)
+          (Small_int :: Small_int :: Returning Small_int)
+          ~f:( * )
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
@@ -207,8 +202,8 @@ let%expect_test "scalar function raises an exception" =
       let scalar_function =
         Duckdb.Function.Scalar.create
           "multiply_numbers_together"
-          [ Small_int; Small_int; Small_int ]
-          ~f:(fun _info _chunk _output -> raise_s [%message "This is a test exception"])
+          (Small_int :: Small_int :: Returning Small_int)
+          ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
       Expect_test_helpers_core.require_does_raise [%here] (fun () ->
@@ -226,12 +221,8 @@ let%expect_test "scalar function string concatenation" =
       let scalar_function =
         Duckdb.Function.Scalar.create
           "string_concat"
-          [ Var_char; Var_char; Var_char ]
-          ~f:(fun _info chunk output ->
-            let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
-            let a = Duckdb.Data_chunk.get_exn chunk Var_char 0 in
-            let b = Duckdb.Data_chunk.get_exn chunk Var_char 1 in
-            Array.map2_exn a b ~f:( ^ ) |> Duckdb.Vector.set_array output Var_char)
+          (Var_char :: Var_char :: Returning Var_char)
+          ~f:( ^ )
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
@@ -252,13 +243,8 @@ let%expect_test "scalar function tupling" =
       let scalar_function =
         Duckdb.Function.Scalar.create
           "string_concat"
-          [ Var_char; Var_char; List Var_char ]
-          ~f:(fun _info chunk output ->
-            let chunk = Duckdb.Data_chunk.Private.create_do_not_free chunk in
-            let a = Duckdb.Data_chunk.get_exn chunk Var_char 0 in
-            let b = Duckdb.Data_chunk.get_exn chunk Var_char 1 in
-            Array.map2_exn a b ~f:(fun a b -> [ a; b ])
-            |> Duckdb.Vector.set_array output (List Var_char))
+          (Var_char :: Var_char :: Returning (List Var_char))
+          ~f:(fun a b -> [ a; b ])
       in
       Duckdb.Function.Scalar.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
