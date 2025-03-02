@@ -48,7 +48,7 @@ let fetch_all t =
       | Some (T type_) ->
         let result = ref [] in
         ( (fun data_chunk -> result := Data_chunk.get_opt data_chunk type_ i :: !result)
-        , fun () -> name, Packed_column.T_opt (type_, Array.concat (List.rev !result)) ))
+        , fun () -> name, Packed_column.T (type_, Array.concat (List.rev !result)) ))
     |> Array.unzip
   in
   let rec go accum =
@@ -73,15 +73,16 @@ let to_string_hum ?(bars = `Unicode) t =
     |> List.map ~f:(fun (name, packed_array) ->
       let type_name =
         (match packed_array with
-         | T (type_, _) -> Type.Typed_non_null.to_untyped type_
-         | T_opt (type_, _) -> Type.Typed.to_untyped type_)
+         | T_non_null (type_, _) -> Type.Typed_non_null.to_untyped type_
+         | T (type_, _) -> Type.Typed.to_untyped type_)
         |> [%sexp_of: Type.t]
         |> Sexp.to_string
       in
       Ascii_table_kernel.Column.create [%string "%{name}\n%{type_name}"] (fun i ->
         match packed_array with
-        | T (type_, array) -> Array.get array i |> Type.Typed_non_null.to_string_hum type_
-        | T_opt (type_, array) ->
+        | T_non_null (type_, array) ->
+          Array.get array i |> Type.Typed_non_null.to_string_hum type_
+        | T (type_, array) ->
           (match Array.get array i with
            | None -> "null"
            | Some value -> Type.Typed.to_string_hum type_ value)))

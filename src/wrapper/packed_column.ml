@@ -1,5 +1,5 @@
 open! Core
 
 type t =
-  | T : 'a Type.Typed_non_null.t * 'a array -> t
-  | T_opt : 'a Type.Typed.t * 'a option array -> t
+  | T_non_null : 'a Type.Typed_non_null.t * 'a array -> t
+  | T : 'a Type.Typed.t * 'a option array -> t
