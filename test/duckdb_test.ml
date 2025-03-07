@@ -178,12 +178,12 @@ let%expect_test "scalar function registration" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       let scalar_function =
-        Duckdb.Function.Scalar.create
+        Duckdb.Scalar_function.create
           "multiply_numbers_together"
           (Small_int :: Small_int :: Returning Small_int)
           ~f:( * )
       in
-      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Scalar_function.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
       [%expect
         {|
@@ -200,12 +200,12 @@ let%expect_test "scalar function raises an exception" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       let scalar_function =
-        Duckdb.Function.Scalar.create
+        Duckdb.Scalar_function.create
           "multiply_numbers_together"
           (Small_int :: Small_int :: Returning Small_int)
           ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
       in
-      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Scalar_function.register_exn scalar_function conn;
       Expect_test_helpers_core.require_does_raise [%here] (fun () ->
         Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result);
       [%expect
@@ -219,12 +219,12 @@ let%expect_test "scalar function string concatenation" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       let scalar_function =
-        Duckdb.Function.Scalar.create
+        Duckdb.Scalar_function.create
           "string_concat"
           (Var_char :: Var_char :: Returning Var_char)
           ~f:( ^ )
       in
-      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Scalar_function.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
       [%expect
         {|
@@ -241,12 +241,12 @@ let%expect_test "scalar function tupling" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       let scalar_function =
-        Duckdb.Function.Scalar.create
+        Duckdb.Scalar_function.create
           "string_concat"
           (Var_char :: Var_char :: Returning (List Var_char))
           ~f:(fun a b -> [ a; b ])
       in
-      Duckdb.Function.Scalar.register_exn scalar_function conn;
+      Duckdb.Scalar_function.register_exn scalar_function conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
       [%expect
         {|
