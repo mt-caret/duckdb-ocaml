@@ -3,7 +3,7 @@ open! Ctypes
 
 type t = Duckdb_stubs.Value.t
 
-let rec create : type a. a Type.Typed_non_null.t -> a -> t =
+let rec create_non_null : type a. a Type.Typed_non_null.t -> a -> t =
   fun type_ value ->
   match type_ with
   | Boolean -> Duckdb_stubs.duckdb_create_bool value
@@ -34,7 +34,7 @@ let rec create : type a. a Type.Typed_non_null.t -> a -> t =
   | List child ->
     let count = List.length value in
     let value_ptr = allocate_n Duckdb_stubs.Value.t ~count in
-    List.iteri value ~f:(fun i value -> value_ptr +@ i <-@ create child value);
+    List.iteri value ~f:(fun i value -> value_ptr +@ i <-@ create_non_null child value);
     Type.Typed_non_null.to_untyped child
     |> Type.to_logical_type
     |> Type.Private.with_logical_type ~f:(fun logical_type ->
@@ -49,7 +49,7 @@ let rec create : type a. a Type.Typed_non_null.t -> a -> t =
       t)
 ;;
 
-let rec create_opt : type a. a Type.Typed.t -> a option -> t =
+let rec create : type a. a Type.Typed.t -> a option -> t =
   fun type_ value ->
   match value with
   | None -> Duckdb_stubs.duckdb_create_null_value ()
@@ -83,7 +83,7 @@ let rec create_opt : type a. a Type.Typed.t -> a option -> t =
      | List child ->
        let count = List.length value in
        let value_ptr = allocate_n Duckdb_stubs.Value.t ~count in
-       List.iteri value ~f:(fun i value -> value_ptr +@ i <-@ create_opt child value);
+       List.iteri value ~f:(fun i value -> value_ptr +@ i <-@ create child value);
        Type.Typed.to_untyped child
        |> Type.to_logical_type
        |> Type.Private.with_logical_type ~f:(fun logical_type ->

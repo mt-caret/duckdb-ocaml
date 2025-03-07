@@ -87,22 +87,30 @@ let append_value (type a) t (type_ : a Type.Typed_non_null.t) (value : a) =
       (to_voidp (Ctypes_std_views.char_ptr_of_string value))
       (Unsigned.UInt64.of_int (String.length value))
   | Timestamp_s ->
-    let duckdb_value = allocate Duckdb_stubs.Value.t (Value.create Timestamp_s value) in
+    let duckdb_value =
+      allocate Duckdb_stubs.Value.t (Value.create_non_null Timestamp_s value)
+    in
     let result = Duckdb_stubs.duckdb_append_value !@t !@duckdb_value in
     Duckdb_stubs.duckdb_destroy_value duckdb_value;
     result
   | Timestamp_ms ->
-    let duckdb_value = allocate Duckdb_stubs.Value.t (Value.create Timestamp_ms value) in
+    let duckdb_value =
+      allocate Duckdb_stubs.Value.t (Value.create_non_null Timestamp_ms value)
+    in
     let result = Duckdb_stubs.duckdb_append_value !@t !@duckdb_value in
     Duckdb_stubs.duckdb_destroy_value duckdb_value;
     result
   | Timestamp_ns ->
-    let duckdb_value = allocate Duckdb_stubs.Value.t (Value.create Timestamp_ns value) in
+    let duckdb_value =
+      allocate Duckdb_stubs.Value.t (Value.create_non_null Timestamp_ns value)
+    in
     let result = Duckdb_stubs.duckdb_append_value !@t !@duckdb_value in
     Duckdb_stubs.duckdb_destroy_value duckdb_value;
     result
   | List child ->
-    let duckdb_value = allocate Duckdb_stubs.Value.t (Value.create (List child) value) in
+    let duckdb_value =
+      allocate Duckdb_stubs.Value.t (Value.create_non_null (List child) value)
+    in
     let result = Duckdb_stubs.duckdb_append_value !@t !@duckdb_value in
     Duckdb_stubs.duckdb_destroy_value duckdb_value;
     result
