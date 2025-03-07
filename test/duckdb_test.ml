@@ -277,3 +277,42 @@ let%expect_test "test querying short and long strings" =
         └──────────────┴────────────────┘
         |}]))
 ;;
+
+(* TODO: A cleaner/safer API here would be nice. *)
+let%expect_test "replacement scan" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Replacement_scan.add db ~f:(fun info ~table_name ->
+      match Int.of_string_opt table_name with
+      | None -> ()
+      | Some n ->
+        if n = 42 then raise_s [%message "42 is not a valid table name!"];
+        Duckdb_stubs.duckdb_replacement_scan_set_function_name info "range";
+        let value =
+          allocate Duckdb_stubs.Value.t (Duckdb.Value.create_non_null Small_int n)
+        in
+        Duckdb_stubs.duckdb_replacement_scan_add_parameter info !@value;
+        Duckdb_stubs.duckdb_destroy_value value);
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Query.run_exn conn {|SELECT * FROM "5"|} ~f:print_result;
+      [%expect
+        {|
+        ┌─────────┐
+        │ range   │
+        │ Big_int │
+        ├─────────┤
+        │ 0       │
+        │ 1       │
+        │ 2       │
+        │ 3       │
+        │ 4       │
+        └─────────┘
+        |}];
+      Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+        Duckdb.Query.run_exn conn {|SELECT * FROM "42"|} ~f:print_result);
+      [%expect
+        {|
+        ((kind DUCKDB_ERROR_BINDER)
+         (message
+          "Binder Error: Error in replacement scan: \"42 is not a valid table name!\"\n"))
+        |}]))
+;;

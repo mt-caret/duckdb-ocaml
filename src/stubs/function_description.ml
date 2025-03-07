@@ -803,4 +803,32 @@ module Functions (F : FOREIGN) = struct
       "duckdb_scalar_function_set_error"
       (Types.Function_info.t @-> string @-> returning void)
   ;;
+
+  let duckdb_add_replacement_scan =
+    foreign
+      "duckdb_add_replacement_scan"
+      (Types.Database.t
+       @-> Types.Replacement_scan.callback
+       @-> ptr_opt void
+       @-> Types.Delete_callback.t
+       @-> returning void)
+  ;;
+
+  let duckdb_replacement_scan_set_function_name =
+    foreign
+      "duckdb_replacement_scan_set_function_name"
+      (Types.Replacement_scan.Info.t @-> string @-> returning void)
+  ;;
+
+  let duckdb_replacement_scan_add_parameter =
+    foreign
+      "duckdb_replacement_scan_add_parameter"
+      (Types.Replacement_scan.Info.t @-> Types.Value.t @-> returning void)
+  ;;
+
+  let duckdb_replacement_scan_set_error =
+    foreign
+      "duckdb_replacement_scan_set_error"
+      (Types.Replacement_scan.Info.t @-> string @-> returning void)
+  ;;
 end

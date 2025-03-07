@@ -94,6 +94,10 @@ module Types (F : TYPE) = struct
   ]} *)
   let idx_t = typedef uint64_t "idx_t"
 
+  module Delete_callback = struct
+    let t = static_funptr (ptr void @-> returning void)
+  end
+
   module Type = struct
     (* {[
       // WARNING: the numbers of these enums should not be changed, as changing the numbers breaks ABI compatibility
@@ -690,6 +694,14 @@ module Types (F : TYPE) = struct
     let function_ =
       static_funptr (Function_info.t @-> Data_chunk.t @-> Vector.t @-> returning void)
     ;;
+  end
+
+  module Replacement_scan = struct
+    module Info = Internal_ptr_struct (struct
+        let name = "duckdb_replacement_scan_info"
+      end)
+
+    let callback = static_funptr (Info.t @-> string @-> ptr void @-> returning void)
   end
 
   (* {[
