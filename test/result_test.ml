@@ -43,7 +43,7 @@ let%expect_test "result_fetch_all" =
         {|INSERT INTO test VALUES (1, 'one'), (2, 'two'), (3, 'three')|};
       (* Test fetch_all *)
       Duckdb.Query.run_exn conn "SELECT * FROM test ORDER BY a" ~f:(fun res ->
-        let (_, columns) = Duckdb.Result_.fetch_all res in
+        let columns = Duckdb.Result_.fetch_all res in
         (* Check first column (integers) *)
         (match columns.(0) with
          | Duckdb.Packed_column.T_non_null (Integer, values) ->

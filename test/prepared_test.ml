@@ -87,7 +87,7 @@ let%expect_test "prepared_statement_types" =
         ; Big_int, 4L
         ; Float, 1.5
         ; Double, 2.5
-        ; Date, Date_.create_exn ~y:2022 ~m:10 ~d:20
+        ; Date, Duckdb.Date.create_exn ~y:2022 ~m:10 ~d:20
         ; Var_char, "hello world"
         ]
       |> Result.ok_or_failwith;
@@ -122,7 +122,7 @@ let%expect_test "prepared_statement_types" =
         ; (* Will be converted to NULL *)
           Double, Float.infinity
         ; (* Will be converted to NULL in some DBs *)
-          Date, Date_.create_exn ~y:2023 ~m:1 ~d:15
+          Date, Duckdb.Date.create_exn ~y:2023 ~m:1 ~d:15
         ; Var_char, ""
         ]
       |> Result.ok_or_failwith;

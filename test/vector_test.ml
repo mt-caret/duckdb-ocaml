@@ -23,7 +23,7 @@ let%expect_test "vector_basic" =
         in
         let vector =
           Duckdb_stubs.duckdb_data_chunk_get_vector
-            !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+            !@(Duckdb.Data_chunk.Private.to_ptr data_chunk |> Ctypes.addr)
             (Unsigned.UInt64.of_int 0)
         in
         (* Test to_array_exn *)
@@ -54,7 +54,7 @@ let%expect_test "vector_nulls" =
         in
         let vector =
           Duckdb_stubs.duckdb_data_chunk_get_vector
-            !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+            !@(Duckdb.Data_chunk.Private.to_ptr data_chunk |> Ctypes.addr)
             (Unsigned.UInt64.of_int 0)
         in
         (* Test to_option_array with NULLs *)
