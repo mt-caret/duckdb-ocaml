@@ -24,12 +24,12 @@ let%expect_test "numeric_type_casting" =
       (* Test casting between numeric types *)
       Duckdb.Query.run_exn
         conn
-        "SELECT \n\
-        \        a::SMALLINT, b::INTEGER, c::BIGINT, \n\
-        \        e::USMALLINT, f::UINTEGER, g::UBIGINT,\n\
-        \        i::DOUBLE, j::FLOAT\n\
-        \        FROM numeric_types ORDER BY a"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        {|SELECT 
+          a::SMALLINT, b::INTEGER, c::BIGINT, 
+          e::USMALLINT, f::UINTEGER, g::UBIGINT,
+          i::DOUBLE, j::FLOAT
+          FROM numeric_types ORDER BY a|}
+        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬───────────┬───────────┬────────────┬────────────┬────────────┬──────────┬──────────┐
@@ -39,14 +39,14 @@ let%expect_test "numeric_type_casting" =
         │ 1         │ 2         │ 3         │ 5          │ 6          │ 7          │ 1.5      │ 2.5      │
         │ 10        │ 1000      │ 100000    │ 200        │ 50000      │ 4000000000 │ 0.125    │ 0.0625   │
         └───────────┴───────────┴───────────┴────────────┴────────────┴────────────┴──────────┴──────────┘
-      |}];
+        |}];
       (* Test numeric operations *)
       Duckdb.Query.run_exn
         conn
-        "SELECT \n\
-        \        a + b, c - d, e * f, g / 2, i + j, j * 2\n\
-        \        FROM numeric_types ORDER BY a"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        {|SELECT 
+          a + b, c - d, e * f, g / 2, i + j, j * 2
+          FROM numeric_types ORDER BY a|}
+        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬───────────┬────────────┬────────────┬──────────┬──────────┐
@@ -56,15 +56,15 @@ let%expect_test "numeric_type_casting" =
         │ 3         │ -1        │ 30         │ 3.5        │ 4.0      │ 5.0      │
         │ 1010      │ -999900000│ 10000000   │ 2000000000 │ 0.1875   │ 0.125    │
         └───────────┴───────────┴────────────┴────────────┴──────────┴──────────┘
-      |}];
+        |}];
       (* Test numeric functions *)
       Duckdb.Query.run_exn
         conn
-        "SELECT \n\
-        \        ABS(-a), ROUND(i, 1), FLOOR(j), CEIL(i), \n\
-        \        GREATEST(a, b), LEAST(c, d)\n\
-        \        FROM numeric_types ORDER BY a"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        {|SELECT 
+          ABS(-a), ROUND(i, 1), FLOOR(j), CEIL(i), 
+          GREATEST(a, b), LEAST(c, d)
+          FROM numeric_types ORDER BY a|}
+        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬──────────┬──────────┬──────────┬───────────┬───────────┐
@@ -74,7 +74,7 @@ let%expect_test "numeric_type_casting" =
         │ 1         │ 1.5      │ 2        │ 2        │ 2         │ 3         │
         │ 10        │ 0.1      │ 0        │ 1        │ 1000      │ 100000    │
         └───────────┴──────────┴──────────┴──────────┴───────────┴───────────┘
-      |}]))
+        |}]))
 ;;
 
 let%expect_test "numeric_overflow_handling" =
@@ -83,11 +83,11 @@ let%expect_test "numeric_overflow_handling" =
       (* Test integer overflow *)
       Duckdb.Query.run_exn
         conn
-        "SELECT \n\
-        \        127::TINYINT + 1, \n\
-        \        32767::SMALLINT + 1,\n\
-        \        255::UTINYINT + 1"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        {|SELECT 
+          127::TINYINT + 1, 
+          32767::SMALLINT + 1,
+          255::UTINYINT + 1|}
+        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────────┬─────────────────┬────────────────┐
@@ -96,15 +96,15 @@ let%expect_test "numeric_overflow_handling" =
         ├───────────────┼─────────────────┼────────────────┤
         │ 128           │ 32768           │ 256            │
         └───────────────┴─────────────────┴────────────────┘
-      |}];
+        |}];
       (* Test try_cast for handling invalid conversions *)
       Duckdb.Query.run_exn
         conn
-        "SELECT \n\
-        \        TRY_CAST(1000 AS TINYINT),\n\
-        \        TRY_CAST(-1 AS UTINYINT),\n\
-        \        TRY_CAST('not a number' AS INTEGER)"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        {|SELECT 
+          TRY_CAST(1000 AS TINYINT),
+          TRY_CAST(-1 AS UTINYINT),
+          TRY_CAST('not a number' AS INTEGER)|}
+        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌─────────────────────────┬─────────────────────────┬───────────────────────────────┐
@@ -113,5 +113,5 @@ let%expect_test "numeric_overflow_handling" =
         ├─────────────────────────┼─────────────────────────┼───────────────────────────────┤
         │ null                    │ null                    │ null                          │
         └─────────────────────────┴─────────────────────────┴───────────────────────────────┘
-      |}]))
+        |}]))
 ;;

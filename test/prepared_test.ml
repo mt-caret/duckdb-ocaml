@@ -7,33 +7,33 @@ let%expect_test "prepared_statement_basic" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       (* Create a test table *)
-      Duckdb.Query.run_exn' conn "CREATE TABLE test(a INTEGER, b VARCHAR, c DOUBLE)";
+      Duckdb.Query.run_exn' conn {|CREATE TABLE test(a INTEGER, b VARCHAR, c DOUBLE)|};
       (* Create a prepared statement for insertion *)
       let prepared_insert =
-        Duckdb.Query.Prepared.create conn "INSERT INTO test VALUES (?, ?, ?)"
+        Duckdb.Query.Prepared.create conn {|INSERT INTO test VALUES (?, ?, ?)|}
         |> Result.ok_or_failwith
       in
       (* Bind and execute with different values *)
       Duckdb.Query.Prepared.bind
         prepared_insert
-        [ Integer, 1; Var_char, "hello"; Double, 1.5 ]
+        [ Integer, 1l; Var_char, "hello"; Double, 1.5 ]
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn' prepared_insert;
       Duckdb.Query.Prepared.bind
         prepared_insert
-        [ Integer, 2; Var_char, "world"; Double, 2.5 ]
+        [ Integer, 2l; Var_char, "world"; Double, 2.5 ]
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn' prepared_insert;
       (* Create a prepared statement for selection *)
       let prepared_select =
-        Duckdb.Query.Prepared.create conn "SELECT * FROM test WHERE a > ? AND c < ?"
+        Duckdb.Query.Prepared.create conn {|SELECT * FROM test WHERE a > ? AND c < ?|}
         |> Result.ok_or_failwith
       in
       (* Bind and execute with filter values *)
-      Duckdb.Query.Prepared.bind prepared_select [ Integer, 0; Double, 2.0 ]
+      Duckdb.Query.Prepared.bind prepared_select [ Integer, 0l; Double, 2.0 ]
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn prepared_select ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬──────────┬──────────┐
@@ -42,12 +42,12 @@ let%expect_test "prepared_statement_basic" =
         ├───────────┼──────────┼──────────┤
         │ 1         │ hello    │ 1.5      │
         └───────────┴──────────┴──────────┘
-      |}];
+        |}];
       (* Change the binding and execute again *)
-      Duckdb.Query.Prepared.bind prepared_select [ Integer, 1; Double, 3.0 ]
+      Duckdb.Query.Prepared.bind prepared_select [ Integer, 1l; Double, 3.0 ]
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn prepared_select ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬──────────┬──────────┐
@@ -56,7 +56,7 @@ let%expect_test "prepared_statement_basic" =
         ├───────────┼──────────┼──────────┤
         │ 2         │ world    │ 2.5      │
         └───────────┴──────────┴──────────┘
-      |}];
+        |}];
       (* Clean up *)
       Duckdb.Query.Prepared.destroy prepared_insert ~here:[%here];
       Duckdb.Query.Prepared.destroy prepared_select ~here:[%here]))
@@ -68,14 +68,14 @@ let%expect_test "prepared_statement_types" =
       (* Create a test table with various types *)
       Duckdb.Query.run_exn'
         conn
-        "CREATE TABLE test_types(\n\
-        \        a TINYINT, b SMALLINT, c INTEGER, d BIGINT, \n\
-        \        e FLOAT, f DOUBLE, g DATE, h VARCHAR)";
+        {|CREATE TABLE test_types(
+          a TINYINT, b SMALLINT, c INTEGER, d BIGINT, 
+          e FLOAT, f DOUBLE, g DATE, h VARCHAR)|};
       (* Create a prepared statement for insertion *)
       let prepared =
         Duckdb.Query.Prepared.create
           conn
-          "INSERT INTO test_types VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+          {|INSERT INTO test_types VALUES (?, ?, ?, ?, ?, ?, ?, ?)|}
         |> Result.ok_or_failwith
       in
       (* Bind and execute with different types *)
@@ -83,8 +83,8 @@ let%expect_test "prepared_statement_types" =
         prepared
         [ Tiny_int, 1
         ; Small_int, 2
-        ; Integer, 3
-        ; Big_int, 4
+        ; Integer, 3l
+        ; Big_int, 4L
         ; Float, 1.5
         ; Double, 2.5
         ; Date, Date_.create_exn ~y:2022 ~m:10 ~d:20
@@ -93,8 +93,8 @@ let%expect_test "prepared_statement_types" =
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn' prepared;
       (* Query the inserted data *)
-      Duckdb.Query.run_exn conn "SELECT * FROM test_types" ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+      Duckdb.Query.run_exn conn {|SELECT * FROM test_types|} ~f:(fun res ->
+        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌─────────┬───────────┬───────────┬───────────┬──────────┬──────────┬────────────┬──────────┐
@@ -103,12 +103,12 @@ let%expect_test "prepared_statement_types" =
         ├─────────┼───────────┼───────────┼───────────┼──────────┼──────────┼────────────┼──────────┤
         │ 1       │ 2         │ 3         │ 4         │ 1.5      │ 2.5      │ 2022-10-20 │ hello world│
         └─────────┴───────────┴───────────┴───────────┴──────────┴──────────┴────────────┴──────────┘
-      |}];
+        |}];
       (* Test prepared statement with NULL values *)
       let prepared_nulls =
         Duckdb.Query.Prepared.create
           conn
-          "INSERT INTO test_types VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+          {|INSERT INTO test_types VALUES (?, ?, ?, ?, ?, ?, ?, ?)|}
         |> Result.ok_or_failwith
       in
       (* Bind with some NULL values *)
@@ -116,8 +116,8 @@ let%expect_test "prepared_statement_types" =
         prepared_nulls
         [ Tiny_int, 10
         ; Small_int, 20
-        ; Integer, 30
-        ; Big_int, 40
+        ; Integer, 30l
+        ; Big_int, 40L
         ; Float, Float.nan
         ; (* Will be converted to NULL *)
           Double, Float.infinity
@@ -128,8 +128,8 @@ let%expect_test "prepared_statement_types" =
       |> Result.ok_or_failwith;
       Duckdb.Query.Prepared.run_exn' prepared_nulls;
       (* Query all data *)
-      Duckdb.Query.run_exn conn "SELECT * FROM test_types ORDER BY a" ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+      Duckdb.Query.run_exn conn {|SELECT * FROM test_types ORDER BY a|} ~f:(fun res ->
+        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌─────────┬───────────┬───────────┬───────────┬──────────┬──────────┬────────────┬──────────┐
@@ -139,7 +139,7 @@ let%expect_test "prepared_statement_types" =
         │ 1       │ 2         │ 3         │ 4         │ 1.5      │ 2.5      │ 2022-10-20 │ hello world│
         │ 10      │ 20        │ 30        │ 40        │ nan      │ inf      │ 2023-01-15 │          │
         └─────────┴───────────┴───────────┴───────────┴──────────┴──────────┴────────────┴──────────┘
-      |}];
+        |}];
       (* Clean up *)
       Duckdb.Query.Prepared.destroy prepared ~here:[%here];
       Duckdb.Query.Prepared.destroy prepared_nulls ~here:[%here]))
