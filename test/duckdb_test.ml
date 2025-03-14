@@ -177,6 +177,8 @@ let%expect_test "appender" =
 let%expect_test "scalar function registration" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       let scalar_function =
         Duckdb.Scalar_function.create
           "multiply_numbers_together"
@@ -199,6 +201,8 @@ let%expect_test "scalar function registration" =
 let%expect_test "scalar function raises an exception" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       let scalar_function =
         Duckdb.Scalar_function.create
           "multiply_numbers_together"
@@ -218,6 +222,8 @@ let%expect_test "scalar function raises an exception" =
 let%expect_test "scalar function string concatenation" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       let scalar_function =
         Duckdb.Scalar_function.create
           "string_concat"
@@ -240,6 +246,8 @@ let%expect_test "scalar function string concatenation" =
 let%expect_test "scalar function tupling" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       let scalar_function =
         Duckdb.Scalar_function.create
           "string_concat"
