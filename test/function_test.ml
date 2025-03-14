@@ -21,7 +21,8 @@ let%expect_test "aggregate_functions" =
       Duckdb.Query.run_exn
         conn
         "SELECT COUNT(*), COUNT(a), COUNT(DISTINCT a) FROM numbers"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌──────────┬──────────┬────────────────┐
@@ -38,7 +39,8 @@ let%expect_test "aggregate_functions" =
           SUM(a), AVG(a), MIN(a), MAX(a),
           SUM(b), AVG(b), MIN(b), MAX(b)
           FROM numbers|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┐
@@ -57,7 +59,8 @@ let%expect_test "aggregate_functions" =
           MAX(c)
           FROM numbers
           WHERE c IS NOT NULL|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────────────────┬────────┬────────┐
@@ -94,7 +97,8 @@ let%expect_test "case_expressions" =
           END as case_result
           FROM test
           ORDER BY a NULLS LAST|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬────────────┐
@@ -119,7 +123,8 @@ let%expect_test "case_expressions" =
           END as range_result
           FROM test
           ORDER BY a NULLS LAST|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬──────────┬─────────────┐
@@ -148,7 +153,8 @@ let%expect_test "scalar_functions" =
           LOWER('WORLD') as lower_result,
           LENGTH('hello world') as length_result,
           SUBSTRING('hello world', 7, 5) as substring_result|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────────┬─────────────┬─────────────┬───────────────┬─────────────────┐
@@ -168,7 +174,8 @@ let%expect_test "scalar_functions" =
           FLOOR(3.99) as floor_result,
           SQRT(16) as sqrt_result,
           POWER(2, 3) as power_result|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬─────────────┬────────────┬─────────────┬────────────┬─────────────┐
@@ -187,7 +194,8 @@ let%expect_test "scalar_functions" =
           DATE_PART('month', DATE '2023-05-15') as month_part,
           DATE_PART('day', DATE '2023-05-15') as day_part,
           DATE_DIFF('day', DATE '2023-01-01', DATE '2023-01-10') as date_diff|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌────────────┬───────────┬────────────┬──────────┬───────────┐
@@ -208,7 +216,8 @@ let%expect_test "scalar_functions" =
       Duckdb.Query.run_exn
         conn
         "SELECT custom_multiply(5, 7) as custom_result"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────────┐

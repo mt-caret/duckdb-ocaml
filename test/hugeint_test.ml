@@ -6,9 +6,7 @@ open! Ctypes
 let%expect_test "hugeint_basic" =
   (* Test hugeint creation and conversion *)
   let hugeint =
-    Duckdb.Hugeint.create
-      ~lower:(Unsigned.UInt64.of_int 1234567890)
-      ~upper:0L
+    Duckdb.Hugeint.create ~lower:(Unsigned.UInt64.of_int 1234567890) ~upper:0L
   in
   let float_val = Duckdb.Hugeint.to_float hugeint in
   float_val |> [%sexp_of: float] |> print_s;
@@ -17,8 +15,7 @@ let%expect_test "hugeint_basic" =
   let hugeint2 = Duckdb.Hugeint.of_float 9876543210.0 in
   let lower = Duckdb.Hugeint.lower hugeint2 in
   let upper = Duckdb.Hugeint.upper hugeint2 in
-  [%message "Float to hugeint" (lower : int64) (upper : int64)]
-  |> print_s;
+  [%message "Float to hugeint" ~lower:(Int64.of_int64 (Unsigned.UInt64.to_int64 lower)) ~upper:(Int64.of_int64 (Unsigned.UInt64.to_int64 upper))] |> print_s;
   [%expect {| ("Float to hugeint" (lower 9876543210) (upper 0)) |}]
 ;;
 
@@ -45,9 +42,7 @@ let%expect_test "hugeint_in_database" =
 let%expect_test "uhugeint_basic" =
   (* Test uhugeint creation and conversion *)
   let uhugeint =
-    Duckdb.Uhugeint.create
-      ~lower:(Unsigned.UInt64.of_int 1234567890)
-      ~upper:0L
+    Duckdb.Uhugeint.create ~lower:(Unsigned.UInt64.of_int 1234567890) ~upper:0L
   in
   let float_val = Duckdb.Uhugeint.to_float uhugeint in
   float_val |> [%sexp_of: float] |> print_s;
@@ -56,7 +51,6 @@ let%expect_test "uhugeint_basic" =
   let uhugeint2 = Duckdb.Uhugeint.of_float 9876543210.0 in
   let lower = Duckdb.Uhugeint.lower uhugeint2 in
   let upper = Duckdb.Uhugeint.upper uhugeint2 in
-  [%message "Float to uhugeint" (lower : int64) (upper : int64)]
-  |> print_s;
+  [%message "Float to uhugeint" ~lower:(Int64.of_int64 (Unsigned.UInt64.to_int64 lower)) ~upper:(Int64.of_int64 (Unsigned.UInt64.to_int64 upper))] |> print_s;
   [%expect {| ("Float to uhugeint" (lower 9876543210) (upper 0)) |}]
 ;;

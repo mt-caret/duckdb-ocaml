@@ -29,7 +29,8 @@ let%expect_test "numeric_type_casting" =
           e::USMALLINT, f::UINTEGER, g::UBIGINT,
           i::DOUBLE, j::FLOAT
           FROM numeric_types ORDER BY a|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬───────────┬───────────┬────────────┬────────────┬────────────┬──────────┬──────────┐
@@ -46,7 +47,8 @@ let%expect_test "numeric_type_casting" =
         {|SELECT 
           a + b, c - d, e * f, g / 2, i + j, j * 2
           FROM numeric_types ORDER BY a|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬───────────┬────────────┬────────────┬──────────┬──────────┐
@@ -64,7 +66,8 @@ let%expect_test "numeric_type_casting" =
           ABS(-a), ROUND(i, 1), FLOOR(j), CEIL(i), 
           GREATEST(a, b), LEAST(c, d)
           FROM numeric_types ORDER BY a|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────┬──────────┬──────────┬──────────┬───────────┬───────────┐
@@ -87,7 +90,8 @@ let%expect_test "numeric_overflow_handling" =
           127::TINYINT + 1, 
           32767::SMALLINT + 1,
           255::UTINYINT + 1|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌───────────────┬─────────────────┬────────────────┐
@@ -104,7 +108,8 @@ let%expect_test "numeric_overflow_handling" =
           TRY_CAST(1000 AS TINYINT),
           TRY_CAST(-1 AS UTINYINT),
           TRY_CAST('not a number' AS INTEGER)|}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
+        ~f:(fun res ->
+          Duckdb.Result_.to_string_hum res ~bars:`Unicode |> [%sexp_of: string] |> print_s);
       [%expect
         {|
         ┌─────────────────────────┬─────────────────────────┬───────────────────────────────┐
