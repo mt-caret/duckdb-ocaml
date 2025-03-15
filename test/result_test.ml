@@ -132,13 +132,11 @@ let%expect_test "result_consumption_behavior" =
     Duckdb.Query.run_exn' conn setup_sql;
     Duckdb.Query.run_exn conn query_sql ~f:(fun res ->
       (* First call to to_string_hum *)
-      let result1 = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
       print_endline "First call to to_string_hum:";
-      print_endline result1;
+      print_result res;
       (* Second call to to_string_hum on the same result *)
-      let result2 = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
       print_endline "\nSecond call to to_string_hum:";
-      print_endline result2));
+      print_result res));
   [%expect
     {|
     First call to to_string_hum:

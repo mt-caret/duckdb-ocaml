@@ -74,9 +74,7 @@ let%expect_test "vector_data_insertion" =
       [ [ 1l; "hello" ]; [ 2l; "world" ] ];
     Duckdb.Appender.close_exn appender ~here:[%here];
     (* Verify data was inserted correctly *)
-    Duckdb.Query.run_exn conn "SELECT * FROM test_vector" ~f:(fun res ->
-      let result = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
-      print_endline result);
+    Duckdb.Query.run_exn conn "SELECT * FROM test_vector" ~f:print_result;
     [%expect
       {|
       ┌─────────┬──────────┐
@@ -128,9 +126,7 @@ let%expect_test "vector_set_array" =
       [ [ 1l ]; [ 2l ]; [ 3l ] ];
     Duckdb.Appender.close_exn appender ~here:[%here];
     (* Verify data was inserted correctly *)
-    Duckdb.Query.run_exn conn "SELECT * FROM test_set_array" ~f:(fun res ->
-      let result = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
-      print_endline result);
+    Duckdb.Query.run_exn conn "SELECT * FROM test_set_array" ~f:print_result;
     [%expect
       {|
       ┌─────────┐
