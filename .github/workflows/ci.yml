@@ -41,5 +41,9 @@ jobs:
       - name: Build
         run: opam exec -- dune build @default
 
+      - name: Check for uncommitted changes after build
+        run: |
+          git diff --exit-code || (echo "Error: Build produced uncommitted changes. Run 'dune build @default' locally and commit the changes." && exit 1)
+
       - name: Run tests
         run: opam exec -- dune build @runtest
