@@ -37,10 +37,21 @@ jobs:
         run: opam install . --deps-only --with-doc
 
       - name: Build documentation
-        run: opam exec -- dune build @doc
+        run: |
+          opam exec -- dune build @doc
+          mkdir -p _build/default/_doc/_html
+          # If documentation was built but in a different location, copy it
+          if [ -d "_build/default/_doc" ] && [ ! -d "_build/default/_doc/_html" ]; then
+            find _build/default/_doc -type f -name "*.html" -exec cp --parents {} _build/default/_doc/_html \;
+          fi
 
       - name: Set-up Pages
         uses: actions/configure-pages@v4
+
+      - name: Debug documentation build
+        run: |
+          ls -la _build/default/_doc/ || echo "Documentation directory does not exist"
+          ls -la _build/default/_doc/_html/ || echo "HTML directory does not exist"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
