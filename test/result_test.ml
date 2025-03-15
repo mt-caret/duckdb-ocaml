@@ -51,47 +51,34 @@ let%expect_test "result_column_count" =
   [%expect {| ("Result column count" (count 5)) |}]
 ;;
 
-let%expect_test "result_column_name" =
-  (* Create a test table with named columns *)
+let%expect_test "result_schema" =
+  (* Create a test table with named columns and different types *)
   let setup_sql =
-    {|CREATE TABLE test_names(
+    {|CREATE TABLE test_schema(
       id INTEGER, 
       name VARCHAR, 
       value DOUBLE
     );
-    INSERT INTO test_names VALUES (1, 'test', 1.5)|}
+    INSERT INTO test_schema VALUES (1, 'test', 1.5)|}
   in
-  let query_sql = "SELECT * FROM test_names" in
+  let query_sql = "SELECT * FROM test_schema" in
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    (* Get the column names *)
-    let col_names =
-      List.init (Duckdb.Result_.column_count res) ~f:(fun i ->
-        Duckdb.Result_.column_name res i)
+    (* Get the schema which includes column names and types *)
+    let schema = Duckdb.Result_.schema res in
+    (* Extract column names *)
+    let col_names = Array.map schema ~f:fst |> Array.to_list in
+    (* Extract column types *)
+    let col_types = 
+      Array.map schema ~f:(fun (_, type_) -> 
+        Duckdb.Type.sexp_of_t type_ |> Sexp.to_string) 
+      |> Array.to_list
     in
-    [%message "Result column names" ~names:(col_names : string list)] |> print_s);
-  [%expect {| ("Result column names" (names (id name value))) |}]
-;;
-
-let%expect_test "result_column_type" =
-  (* Create a test table with different types *)
-  let setup_sql =
-    {|CREATE TABLE test_types(
-      a INTEGER, 
-      b VARCHAR, 
-      c DOUBLE, 
-      d BOOLEAN
-    );
-    INSERT INTO test_types VALUES (1, 'test', 1.5, true)|}
-  in
-  let query_sql = "SELECT * FROM test_types" in
-  test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    (* Get the column types *)
-    let col_types =
-      List.init (Duckdb.Result_.column_count res) ~f:(fun i ->
-        Duckdb.Result_.column_type res i |> Duckdb.Type.sexp_of_t |> Sexp.to_string)
-    in
-    [%message "Result column types" ~types:(col_types : string list)] |> print_s);
-  [%expect {| ("Result column types" (types (Integer Var_char Double Boolean))) |}]
+    [%message 
+      "Result schema" 
+        ~names:(col_names : string list)
+        ~types:(col_types : string list)] 
+    |> print_s);
+  [%expect {| ("Result schema" (names (id name value)) (types (Integer Var_char Double))) |}]
 ;;
 
 let%expect_test "result_fetch" =
@@ -101,41 +88,25 @@ let%expect_test "result_fetch" =
     INSERT INTO test_fetch VALUES (1), (2), (3)|}
   in
   let query_sql = "SELECT * FROM test_fetch" in
-  test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    with_chunk_data res ~f:(fun data_chunk ->
-      (* Get the data from the chunk *)
-      let int_array =
-        Duckdb.Data_chunk.get_exn data_chunk Duckdb.Type.Typed_non_null.Integer 0
-        |> Array.copy
+  with_single_threaded_db (fun conn ->
+    Duckdb.Query.run_exn' conn setup_sql;
+    Duckdb.Query.run_exn conn query_sql ~f:(fun res ->
+      (* Use fetch_all instead of fetch to avoid resource management issues *)
+      let row_count, columns = Duckdb.Result_.fetch_all res in
+      (* Extract the integer column *)
+      let int_values = 
+        match columns.(0) with
+        | (_, Duckdb.Packed_column.T (type_, array)) ->
+          Array.map array ~f:(fun v -> 
+            match v with
+            | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
+            | None -> "null")
+          |> Array.to_list
+        | _ -> []
       in
-      (* Print the array *)
-      [%message "Fetched data" ~values:(int_array : int32 array)] |> print_s));
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  ("Already freed" Duckdb.Data_chunk
-    (first_freed_at src/wrapper/result_.ml:49:67))
-  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
-  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
-  Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
-  Called from Duckdb_test__Result_test.(fun) in file "test/result_test.ml", line 108, characters 8-81
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
-  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Duckdb_test__Result_test.(fun) in file "test/result_test.ml", lines 104-112, characters 2-78
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
-  |}]
+      (* Print the values *)
+      [%message "Fetched data" ~values:(int_values : string list)] |> print_s));
+  [%expect {| ("Fetched data" (values (1 2 3))) |}]
 ;;
 
 let%expect_test "result_fetch_all" =

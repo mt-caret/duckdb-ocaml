@@ -13,28 +13,23 @@ let column_count (t : t) =
   Resource.get_exn t |> addr |> Duckdb_stubs.duckdb_column_count |> Unsigned.UInt64.to_int
 ;;
 
+(* These functions are used internally by schema *)
+let column_name_internal (t' : Duckdb_stubs.Result.t structure) i =
+  Duckdb_stubs.duckdb_column_name (addr t') (Unsigned.UInt64.of_int i)
+;;
+
+let column_type_internal (t' : Duckdb_stubs.Result.t structure) i =
+  Duckdb_stubs.duckdb_column_logical_type (addr t') (Unsigned.UInt64.of_int i)
+  |> Type.Private.with_logical_type ~f:Type.of_logical_type_exn
+;;
+
 let schema (t : t) =
   let t' = Resource.get_exn t in
   column_count t
   |> Array.init ~f:(fun i ->
-    let i = Unsigned.UInt64.of_int i in
-    let name = Duckdb_stubs.duckdb_column_name (addr t') i in
-    let type_ =
-      Duckdb_stubs.duckdb_column_logical_type (addr t') i
-      |> Type.Private.with_logical_type ~f:Type.of_logical_type_exn
-    in
+    let name = column_name_internal t' i in
+    let type_ = column_type_internal t' i in
     name, type_)
-;;
-
-let column_name (t : t) i =
-  let t' = Resource.get_exn t in
-  Duckdb_stubs.duckdb_column_name (addr t') (Unsigned.UInt64.of_int i)
-;;
-
-let column_type (t : t) i =
-  let t' = Resource.get_exn t in
-  Duckdb_stubs.duckdb_column_logical_type (addr t') (Unsigned.UInt64.of_int i)
-  |> Type.Private.with_logical_type ~f:Type.of_logical_type_exn
 ;;
 
 let fetch (t : t) ~f =
