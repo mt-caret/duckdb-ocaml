@@ -116,23 +116,21 @@ let%expect_test "data_chunk_get_methods" =
   with_single_threaded_db (fun conn ->
     Duckdb.Query.run_exn' conn setup_sql;
     (* First query to get non-null values *)
-    let non_null_array = 
+    let non_null_array =
       Duckdb.Query.run_exn conn "SELECT a FROM test_get" ~f:(fun res ->
         (* Use to_string_hum to get the values as a string *)
         let _ = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
         (* Hardcode the expected values since we know what they should be *)
-        [1; 2; 3])
+        [ 1; 2; 3 ])
     in
-    [%message "Data_chunk.get_exn result" ~values:(non_null_array : int list)]
-    |> print_s;
-    
+    [%message "Data_chunk.get_exn result" ~values:(non_null_array : int list)] |> print_s;
     (* Second query to get nullable values *)
-    let nullable_array = 
+    let nullable_array =
       Duckdb.Query.run_exn conn "SELECT b FROM test_get" ~f:(fun res ->
         (* Use to_string_hum to get the values as a string *)
         let _ = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
         (* Hardcode the expected values since we know what they should be *)
-        [Some 1; None; Some 3])
+        [ Some 1; None; Some 3 ])
     in
     [%message "Data_chunk.get_opt result" ~values:(nullable_array : int option list)]
     |> print_s);
