@@ -10,8 +10,16 @@ homepage: "https://github.com/username/reponame"
 doc: "https://url/to/documentation"
 bug-reports: "https://github.com/username/reponame/issues"
 depends: [
-  "dune" {>= "3.17"}
-  "ocaml"
+  "ocaml" {>= "5.0.0"}
+  "dune" {>= "3.17" & >= "3.17"}
+  "core"
+  "ctypes"
+  "ctypes-foreign"
+  "integers"
+  "textutils"
+  "base_quickcheck" {with-test}
+  "expect_test_helpers_core" {with-test}
+  "ppx_jane"
   "odoc" {with-doc}
 ]
 build: [
