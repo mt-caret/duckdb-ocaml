@@ -139,28 +139,47 @@ let%expect_test "data_chunk_get_methods" =
   with_single_threaded_db (fun conn ->
     Duckdb.Query.run_exn' conn setup_sql;
     (* First query to get non-null values *)
-    let non_null_array =
-      Duckdb.Query.run_exn conn "SELECT a FROM test_get" ~f:(fun res ->
-        (* Use to_string_hum to get the values as a string *)
-        let _ = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
-        (* Hardcode the expected values since we know what they should be *)
-        [ 1; 2; 3 ])
-    in
-    [%message "Data_chunk.get_exn result" ~values:(non_null_array : int list)] |> print_s;
+    Duckdb.Query.run_exn conn "SELECT a FROM test_get" ~f:(fun res ->
+      (* Actually test Data_chunk.get_exn by fetching a chunk and extracting values *)
+      Duckdb.Result_.fetch res ~f:(function
+        | None -> failwith "Expected data chunk but got None"
+        | Some chunk ->
+          (* Get the actual values using Data_chunk.get_exn *)
+          let values = Duckdb.Data_chunk.get_exn chunk Integer 0 in
+          (* Verify the values match what we expect *)
+          let expected = [| 1l; 2l; 3l |] in
+          for i = 0 to Array.length values - 1 do
+            if not (Int32.equal values.(i) expected.(i))
+            then
+              failwith
+                [%string
+                  "Value mismatch at index %{i#Int}: expected %{expected.(i)#Int32}, got \
+                   %{values.(i)#Int32}"]
+          done;
+          [%message "Data_chunk.get_exn verified" ~length:(Array.length values : int)]
+          |> print_s));
     (* Second query to get nullable values *)
-    let nullable_array =
-      Duckdb.Query.run_exn conn "SELECT b FROM test_get" ~f:(fun res ->
-        (* Use to_string_hum to get the values as a string *)
-        let _ = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
-        (* Hardcode the expected values since we know what they should be *)
-        [ Some 1; None; Some 3 ])
-    in
-    [%message "Data_chunk.get_opt result" ~values:(nullable_array : int option list)]
-    |> print_s);
+    Duckdb.Query.run_exn conn "SELECT b FROM test_get" ~f:(fun res ->
+      (* Actually test Data_chunk.get_opt by fetching a chunk and extracting values *)
+      Duckdb.Result_.fetch res ~f:(function
+        | None -> failwith "Expected data chunk but got None"
+        | Some chunk ->
+          (* Get the actual values using Data_chunk.get_opt *)
+          let values = Duckdb.Data_chunk.get_opt chunk Integer 0 in
+          (* Verify the values match what we expect *)
+          let expected = [| Some 1l; None; Some 3l |] in
+          for i = 0 to Array.length values - 1 do
+            match values.(i), expected.(i) with
+            | None, None -> ()
+            | Some v, Some e when Int32.equal v e -> ()
+            | _ -> failwith [%string "Value mismatch at index %{i#Int}"]
+          done;
+          [%message "Data_chunk.get_opt verified" ~length:(Array.length values : int)]
+          |> print_s)));
   [%expect
     {|
-    ("Data_chunk.get_exn result" (values (1 2 3)))
-    ("Data_chunk.get_opt result" (values ((1) () (3))))
+    ("Data_chunk.get_exn verified" (length 3))
+    ("Data_chunk.get_opt verified" (length 3))
     |}]
 ;;
 
@@ -197,33 +216,42 @@ let%expect_test "data_chunk_to_string_hum_function" =
   in
   with_single_threaded_db (fun conn ->
     Duckdb.Query.run_exn' conn setup_sql;
-    (* Use Result_.to_string_hum instead of Data_chunk.to_string_hum to avoid resource management issues *)
+    (* Test Data_chunk.to_string_hum directly *)
     Duckdb.Query.run_exn conn "SELECT * FROM test_to_string" ~f:(fun res ->
-      (* Test to_string_hum function with different bar styles *)
-      let unicode_output = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
-      let ascii_output = Duckdb.Result_.to_string_hum res ~bars:`Ascii in
-      (* Print the results *)
-      print_endline "Unicode bars:";
-      print_endline unicode_output;
-      print_endline "\nAscii bars:";
-      print_endline ascii_output));
+      Duckdb.Result_.fetch res ~f:(function
+        | None -> failwith "Expected data chunk but got None"
+        | Some chunk ->
+          (* Get the column count from the result *)
+          let column_count = Duckdb.Result_.column_count res in
+          (* Test to_string_hum function with different bar styles *)
+          let unicode_output =
+            Duckdb.Data_chunk.to_string_hum chunk ~column_count ~bars:`Unicode
+          in
+          let ascii_output =
+            Duckdb.Data_chunk.to_string_hum chunk ~column_count ~bars:`Ascii
+          in
+          (* Print the results *)
+          print_endline "Data_chunk.to_string_hum with Unicode bars:";
+          print_endline unicode_output;
+          print_endline "\nData_chunk.to_string_hum with Ascii bars:";
+          print_endline ascii_output)));
   [%expect
     {|
-    Unicode bars:
-    ┌─────────┬──────────┐
-    │ a       │ b        │
-    │ Integer │ Var_char │
-    ├─────────┼──────────┤
-    │ 1       │ hello    │
-    │ 2       │ world    │
-    └─────────┴──────────┘
+    Data_chunk.to_string_hum with Unicode bars:
+    ┌──────────┬──────────┐
+    │ Column 0 │ Column 1 │
+    ├──────────┼──────────┤
+    │ Data     │ Data     │
+    │ Data     │ Data     │
+    └──────────┴──────────┘
 
 
-    Ascii bars:
-    |--------------------|
-    | a       | b        |
-    | Integer | Var_char |
-    |---------+----------|
-    |--------------------|
+    Data_chunk.to_string_hum with Ascii bars:
+    |---------------------|
+    | Column 0 | Column 1 |
+    |----------+----------|
+    | Data     | Data     |
+    | Data     | Data     |
+    |---------------------|
     |}]
 ;;
