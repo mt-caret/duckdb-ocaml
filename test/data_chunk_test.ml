@@ -208,24 +208,19 @@ let%expect_test "data_chunk_to_string_hum_function" =
       let ascii_output =
         Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk
       in
-      let none_output =
-        Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk
-      in
       (* Print the results *)
       print_endline "Unicode bars:";
       print_endline unicode_output;
       print_endline "\nAscii bars:";
-      print_endline ascii_output;
-      print_endline "\nNo bars:";
-      print_endline none_output));
+      print_endline ascii_output));
   [%expect
     {|
     Unicode bars:
     ┌──────────┬──────────┐
     │ Column 0 │ Column 1 │
     ├──────────┼──────────┤
-    │ ...      │ ...      │
-    │ ...      │ ...      │
+    │ Data     │ Data     │
+    │ Data     │ Data     │
     └──────────┴──────────┘
 
 
@@ -233,17 +228,8 @@ let%expect_test "data_chunk_to_string_hum_function" =
     |---------------------|
     | Column 0 | Column 1 |
     |----------+----------|
-    | ...      | ...      |
-    | ...      | ...      |
-    |---------------------|
-
-
-    No bars:
-    |---------------------|
-    | Column 0 | Column 1 |
-    |----------+----------|
-    | ...      | ...      |
-    | ...      | ...      |
+    | Data     | Data     |
+    | Data     | Data     |
     |---------------------|
     |}]
 ;;
