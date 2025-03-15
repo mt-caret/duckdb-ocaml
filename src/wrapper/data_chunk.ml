@@ -30,9 +30,9 @@ let get_opt t type_ idx =
 let free t ~here = Resource.free t.data_chunk ~here
 
 let to_string_hum ?(bars = `Unicode) ~column_count t =
-  if t.length = 0 || column_count = 0
-  then ""
-  else (
+  match t.length, column_count with
+  | 0, _ | _, 0 -> ""
+  | _, _ ->
     let columns =
       List.init column_count ~f:(fun idx ->
         let name = sprintf "Column %d" idx in
@@ -44,11 +44,11 @@ let to_string_hum ?(bars = `Unicode) ~column_count t =
                 !@(Resource.get_exn t.data_chunk)
                 (Unsigned.UInt64.of_int idx)
             in
-            (* Try to get a simple string representation of the cell *)
+            (* Simple string representation of the cell *)
             "Data")
           else ""))
     in
-    List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars)
+    List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars
 ;;
 
 module Private = struct
