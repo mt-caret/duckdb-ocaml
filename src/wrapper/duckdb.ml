@@ -11,6 +11,7 @@ module Replacement_scan = Replacement_scan
 module Resource = Resource
 module Result_ = Result_
 module Scalar_function = Scalar_function
+module Table_function = Table_function
 module Time_ = Time_
 module Timestamp = Timestamp
 module Type = Type

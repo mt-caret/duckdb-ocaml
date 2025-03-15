@@ -686,6 +686,15 @@ module Types (F : TYPE) = struct
       let name = "duckdb_vector"
     end)
 
+  module Blob = struct
+    type t
+
+    let t : t structure typ = typedef (structure "_duckdb_blob") "duckdb_blob"
+    let data : (unit ptr, t structure) field = field t "data" (ptr void)
+    let size : (Unsigned.UInt64.t, t structure) field = field t "size" idx_t
+    let () = seal t
+  end
+
   module Scalar_function = struct
     include Internal_ptr_struct (struct
         let name = "duckdb_scalar_function"
@@ -694,6 +703,24 @@ module Types (F : TYPE) = struct
     let function_ =
       static_funptr (Function_info.t @-> Data_chunk.t @-> Vector.t @-> returning void)
     ;;
+  end
+
+  module Bind_info = Internal_ptr_struct (struct
+      let name = "duckdb_bind_info"
+    end)
+
+  module Init_info = Internal_ptr_struct (struct
+      let name = "duckdb_init_info"
+    end)
+
+  module Table_function = struct
+    include Internal_ptr_struct (struct
+        let name = "duckdb_table_function"
+      end)
+
+    let bind = static_funptr (Bind_info.t @-> returning void)
+    let init = static_funptr (Init_info.t @-> returning void)
+    let function_ = static_funptr (Function_info.t @-> Data_chunk.t @-> returning void)
   end
 
   module Replacement_scan = struct

@@ -97,3 +97,67 @@ let rec create : type a. a Type.Typed.t -> a option -> t =
          |> List.iter ~f:(fun i -> Duckdb_stubs.duckdb_destroy_value (value_ptr +@ i));
          t))
 ;;
+
+let get_non_null : type a. a Type.Typed_non_null.t -> t -> a =
+  fun type_ value ->
+  match type_ with
+  | Boolean -> Duckdb_stubs.duckdb_get_bool value
+  | Tiny_int -> Duckdb_stubs.duckdb_get_int8 value
+  | Small_int -> Duckdb_stubs.duckdb_get_int16 value
+  | Integer -> Duckdb_stubs.duckdb_get_int32 value
+  | Big_int -> Duckdb_stubs.duckdb_get_int64 value
+  | U_tiny_int -> Duckdb_stubs.duckdb_get_uint8 value
+  | U_small_int -> Duckdb_stubs.duckdb_get_uint16 value
+  | U_integer -> Duckdb_stubs.duckdb_get_uint32 value
+  | U_big_int -> Duckdb_stubs.duckdb_get_uint64 value
+  | Float -> Duckdb_stubs.duckdb_get_float value
+  | Double -> Duckdb_stubs.duckdb_get_double value
+  | Timestamp -> Duckdb_stubs.duckdb_get_timestamp value
+  | Date -> Duckdb_stubs.duckdb_get_date value
+  | Time -> Duckdb_stubs.duckdb_get_time value
+  | Interval -> Duckdb_stubs.duckdb_get_interval value
+  | Huge_int -> Duckdb_stubs.duckdb_get_hugeint value
+  | Uhuge_int -> Duckdb_stubs.duckdb_get_uhugeint value
+  | Var_char -> Duckdb_stubs.duckdb_get_varchar value
+  | Blob ->
+    let blob = Duckdb_stubs.duckdb_get_blob value in
+    string_from_ptr
+      (getf blob Duckdb_stubs.Blob.data |> from_voidp char)
+      ~length:(getf blob Duckdb_stubs.Blob.size |> Unsigned.UInt64.to_int)
+  | Timestamp_s -> Duckdb_stubs.duckdb_get_timestamp_s value
+  | Timestamp_ms -> Duckdb_stubs.duckdb_get_timestamp_ms value
+  | Timestamp_ns -> Duckdb_stubs.duckdb_get_timestamp_ns value
+  | List _ -> failwith "List type not supported"
+;;
+
+let get : type a. a Type.Typed.t -> t -> a =
+  fun type_ value ->
+  match type_ with
+  | Boolean -> Duckdb_stubs.duckdb_get_bool value
+  | Tiny_int -> Duckdb_stubs.duckdb_get_int8 value
+  | Small_int -> Duckdb_stubs.duckdb_get_int16 value
+  | Integer -> Duckdb_stubs.duckdb_get_int32 value
+  | Big_int -> Duckdb_stubs.duckdb_get_int64 value
+  | U_tiny_int -> Duckdb_stubs.duckdb_get_uint8 value
+  | U_small_int -> Duckdb_stubs.duckdb_get_uint16 value
+  | U_integer -> Duckdb_stubs.duckdb_get_uint32 value
+  | U_big_int -> Duckdb_stubs.duckdb_get_uint64 value
+  | Float -> Duckdb_stubs.duckdb_get_float value
+  | Double -> Duckdb_stubs.duckdb_get_double value
+  | Timestamp -> Duckdb_stubs.duckdb_get_timestamp value
+  | Date -> Duckdb_stubs.duckdb_get_date value
+  | Time -> Duckdb_stubs.duckdb_get_time value
+  | Interval -> Duckdb_stubs.duckdb_get_interval value
+  | Huge_int -> Duckdb_stubs.duckdb_get_hugeint value
+  | Uhuge_int -> Duckdb_stubs.duckdb_get_uhugeint value
+  | Var_char -> Duckdb_stubs.duckdb_get_varchar value
+  | Blob ->
+    let blob = Duckdb_stubs.duckdb_get_blob value in
+    string_from_ptr
+      (getf blob Duckdb_stubs.Blob.data |> from_voidp char)
+      ~length:(getf blob Duckdb_stubs.Blob.size |> Unsigned.UInt64.to_int)
+  | Timestamp_s -> Duckdb_stubs.duckdb_get_timestamp_s value
+  | Timestamp_ms -> Duckdb_stubs.duckdb_get_timestamp_ms value
+  | Timestamp_ns -> Duckdb_stubs.duckdb_get_timestamp_ns value
+  | List _ -> failwith "List type not supported"
+;;

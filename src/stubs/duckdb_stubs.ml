@@ -18,18 +18,19 @@ let char_ptr_to_string_with_duckdb_free str_ptr =
   str
 ;;
 
-let duckdb_parameter_name =
-  fun prepared_statement index ->
+let duckdb_parameter_name prepared_statement index =
   duckdb_parameter_name prepared_statement index
   |> Option.map ~f:char_ptr_to_string_with_duckdb_free
 ;;
 
-let duckdb_struct_type_child_name =
-  fun logical_type index ->
+let duckdb_struct_type_child_name logical_type index =
   duckdb_struct_type_child_name logical_type index |> char_ptr_to_string_with_duckdb_free
 ;;
 
-let duckdb_union_type_member_name =
-  fun logical_type index ->
+let duckdb_union_type_member_name logical_type index =
   duckdb_union_type_member_name logical_type index |> char_ptr_to_string_with_duckdb_free
+;;
+
+let duckdb_get_varchar value =
+  duckdb_get_varchar value |> char_ptr_to_string_with_duckdb_free
 ;;
