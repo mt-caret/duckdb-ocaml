@@ -68,17 +68,16 @@ let%expect_test "result_schema" =
     (* Extract column names *)
     let col_names = Array.map schema ~f:fst |> Array.to_list in
     (* Extract column types *)
-    let col_types = 
-      Array.map schema ~f:(fun (_, type_) -> 
-        Duckdb.Type.sexp_of_t type_ |> Sexp.to_string) 
+    let col_types =
+      Array.map schema ~f:(fun (_, type_) ->
+        Duckdb.Type.sexp_of_t type_ |> Sexp.to_string)
       |> Array.to_list
     in
-    [%message 
-      "Result schema" 
-        ~names:(col_names : string list)
-        ~types:(col_types : string list)] 
+    [%message
+      "Result schema" ~names:(col_names : string list) ~types:(col_types : string list)]
     |> print_s);
-  [%expect {| ("Result schema" (names (id name value)) (types (Integer Var_char Double))) |}]
+  [%expect
+    {| ("Result schema" (names (id name value)) (types (Integer Var_char Double))) |}]
 ;;
 
 let%expect_test "result_fetch" =
@@ -94,10 +93,10 @@ let%expect_test "result_fetch" =
       (* Use fetch_all instead of fetch to avoid resource management issues *)
       let row_count, columns = Duckdb.Result_.fetch_all res in
       (* Extract the integer column *)
-      let int_values = 
+      let int_values =
         match columns.(0) with
-        | (_, Duckdb.Packed_column.T (type_, array)) ->
-          Array.map array ~f:(fun v -> 
+        | _, Duckdb.Packed_column.T (type_, array) ->
+          Array.map array ~f:(fun v ->
             match v with
             | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
             | None -> "null")
