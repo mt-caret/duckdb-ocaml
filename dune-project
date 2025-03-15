@@ -31,7 +31,7 @@
   textutils
   (base_quickcheck :with-test)
   (expect_test_helpers_core :with-test)
-  (ppx_jane :with-test))
+  ppx_jane)
  (tags
   ("add topics" "to describe" your project)))
 
