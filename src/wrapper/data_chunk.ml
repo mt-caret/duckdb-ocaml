@@ -29,7 +29,8 @@ let get_opt t type_ idx =
 
 let free t ~here = Resource.free t.data_chunk ~here
 
-(** Returns a human-readable string representation of the data chunk *)
+(** Returns a human-readable string representation of the data chunk.
+    The column_count parameter specifies how many columns to display. *)
 let to_string_hum ?(bars = `Unicode) ~column_count t =
   match t.length, column_count with
   | 0, _ | _, 0 -> ""
