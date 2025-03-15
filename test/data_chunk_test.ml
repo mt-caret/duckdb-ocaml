@@ -151,7 +151,8 @@ let%expect_test "data_chunk_get_methods" =
       [%message "Data_chunk.get_opt result" ~values:(nullable_array : int32 option array)]
       |> print_s));
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
