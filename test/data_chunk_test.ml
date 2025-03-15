@@ -74,7 +74,8 @@ let%expect_test "data_chunk_column_count" =
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     (* Test column_count function *)
     with_chunk_data res ~f:(fun chunk ->
-      let count = Duckdb.Data_chunk.column_count chunk in
+      let col_count = Duckdb.Result_.column_count res in
+      let count = Duckdb.Data_chunk.column_count col_count chunk in
       [%message "Data chunk column count" ~count:(count : int)] |> print_s));
   [%expect {| ("Data chunk column count" (count 0)) |}]
 ;;
@@ -137,14 +138,16 @@ let%expect_test "data_chunk_get_methods" =
   let query_sql = "SELECT * FROM test_get" in
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     with_chunk_data res ~f:(fun chunk ->
-      (* Test get_exn on column without NULLs *)
+      (* Copy data before the chunk is freed *)
       let non_null_array =
-        Duckdb.Data_chunk.get_exn chunk Duckdb.Type.Typed_non_null.Integer 0
+        Duckdb.Data_chunk.get_exn chunk Duckdb.Type.Typed_non_null.Integer 0 |> Array.copy
       in
+      let nullable_array =
+        Duckdb.Data_chunk.get_opt chunk Duckdb.Type.Typed.Integer 1 |> Array.copy
+      in
+      (* Print the results *)
       [%message "Data_chunk.get_exn result" ~values:(non_null_array : int32 array)]
       |> print_s;
-      (* Test get_opt on column with NULLs *)
-      let nullable_array = Duckdb.Data_chunk.get_opt chunk Duckdb.Type.Typed.Integer 1 in
       [%message "Data_chunk.get_opt result" ~values:(nullable_array : int32 option array)]
       |> print_s));
   [%expect.unreachable]
@@ -190,7 +193,8 @@ let%expect_test "data_chunk_column_count_function" =
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     with_chunk_data res ~f:(fun chunk ->
       (* Test column_count function *)
-      let count = Duckdb.Data_chunk.column_count chunk in
+      let col_count = Duckdb.Result_.column_count res in
+      let count = Duckdb.Data_chunk.column_count col_count chunk in
       [%message "Data_chunk.column_count result" ~count:(count : int)] |> print_s));
   [%expect {| ("Data_chunk.column_count result" (count 0)) |}]
 ;;
@@ -211,9 +215,12 @@ let%expect_test "data_chunk_to_string_hum_function" =
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     with_chunk_data res ~f:(fun chunk ->
       (* Test to_string_hum function with different bar styles *)
-      let unicode_output = Duckdb.Data_chunk.to_string_hum chunk ~bars:`Unicode in
-      let ascii_output = Duckdb.Data_chunk.to_string_hum chunk ~bars:`Ascii in
-      let none_output = Duckdb.Data_chunk.to_string_hum chunk ~bars:`None in
+      let col_count = Duckdb.Result_.column_count res in
+      let unicode_output =
+        Duckdb.Data_chunk.to_string_hum ~bars:`Unicode col_count chunk
+      in
+      let ascii_output = Duckdb.Data_chunk.to_string_hum ~bars:`Ascii col_count chunk in
+      let none_output = Duckdb.Data_chunk.to_string_hum ~bars:`None col_count chunk in
       (* Print the results *)
       print_endline "Unicode bars:";
       print_endline unicode_output;

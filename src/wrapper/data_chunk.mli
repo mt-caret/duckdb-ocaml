@@ -7,12 +7,11 @@ val get_exn : t -> 'a Type.Typed_non_null.t -> int -> 'a array
 val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 val free : t -> here:Source_code_position.t -> unit
 
-(** Returns the number of columns in the data chunk. If count is provided, uses that value.
-    Otherwise, determines the count by checking vectors. *)
-val column_count : ?count:int -> t -> int
+(** Returns the number of columns in the data chunk. *)
+val column_count : int -> t -> int
 
 (** Returns a human-readable string representation of the data chunk *)
-val to_string_hum : ?bars:[ `Ascii | `None | `Unicode ] -> t -> string
+val to_string_hum : ?bars:[ `Ascii | `None | `Unicode ] -> int -> t -> string
 
 module Private : sig
   val create : Duckdb_stubs.Data_chunk.t -> t

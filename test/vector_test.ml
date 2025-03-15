@@ -229,7 +229,8 @@ let%expect_test "vector_to_array_exn" =
       (* Print the array *)
       [%message "Vector.to_array_exn result" ~values:(int_array : int32 array)] |> print_s);
     [%expect.unreachable])
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -281,7 +282,8 @@ let%expect_test "vector_to_option_array" =
       [%message "Vector.to_option_array result" ~values:(int_array : int32 option array)]
       |> print_s);
     [%expect.unreachable])
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -395,7 +397,8 @@ let%expect_test "vector_assert_all_valid" =
       [%message "Vector.assert_all_valid with NULLs" ~is_valid:(is_valid : bool)]
       |> print_s);
     [%expect.unreachable])
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)

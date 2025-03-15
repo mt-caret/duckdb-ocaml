@@ -140,11 +140,7 @@ module Prepared = struct
       Error (Option.value_exn error)
   ;;
 
-  let create_exn conn query =
-    match create conn query with
-    | Ok result -> result
-    | Error msg -> failwith msg
-  ;;
+  let create_exn conn query = create conn query |> Result.ok_or_failwith
 
   let bind =
     let rec go t (parameters : Parameters.t) index =
@@ -172,11 +168,7 @@ module Prepared = struct
       | true -> go t parameters 1
   ;;
 
-  let bind_exn t parameters =
-    match bind t parameters with
-    | Ok () -> ()
-    | Error msg -> failwith msg
-  ;;
+  let bind_exn t parameters = bind t parameters |> Result.ok_or_failwith
 
   let clear_bindings_exn t =
     let t = Resource.get_exn t in
