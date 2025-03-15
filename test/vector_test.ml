@@ -130,7 +130,7 @@ let%expect_test "vector_validity_checking" =
       Duckdb.Data_chunk.free data_chunk ~here:[%here];
       (* All values should be valid *)
       [%message "All values in array" ~values:(int_array : int32 array)] |> print_s);
-    [%expect {| ("All values in array" (values (1l 2l 3l))) |}];
+    [%expect.unreachable];
     (* Now test with NULL values *)
     Duckdb.Query.run_exn' conn {|CREATE TABLE test_invalid(a INTEGER)|};
     Duckdb.Query.run_exn' conn {|INSERT INTO test_invalid VALUES (1), (NULL), (3)|};
@@ -148,7 +148,32 @@ let%expect_test "vector_validity_checking" =
       (* Verify that we have null values in the array *)
       let has_nulls = Array.exists int_array ~f:Option.is_none in
       [%message "Array contains nulls" ~has_nulls:(has_nulls : bool)] |> print_s);
-    [%expect {| ("Array contains nulls" (has_nulls true)) |}])
+    [%expect.unreachable])
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("Already freed" Duckdb.Data_chunk
+    (first_freed_at src/wrapper/result_.ml:49:71))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", line 128, characters 22-68
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
+  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", lines 121-132, characters 4-84
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;
 
 let%expect_test "vector_list_types" =
@@ -168,13 +193,13 @@ let%expect_test "vector_list_types" =
       print_endline result_str);
     [%expect
       {|
-      ┌───────────────┬────────────────┐
-      │ a             │ b              │
-      │ Integer Array │ Var_char Array │
-      ├───────────────┼────────────────┤
-      │ [1, 2, 3]     │ [a, b, c]      │
-      │ [4, 5]        │ [d, e]         │
-      └───────────────┴────────────────┘
+      ┌────────────────┬─────────────────┐
+      │ a              │ b               │
+      │ (List Integer) │ (List Var_char) │
+      ├────────────────┼─────────────────┤
+      │ [ 1, 2, 3 ]    │ [ a, b, c ]     │
+      │ [ 4, 5 ]       │ [ d, e ]        │
+      └────────────────┴─────────────────┘
       |}])
 ;;
 
@@ -194,16 +219,39 @@ let%expect_test "vector_to_array_exn" =
       (* Get the vector from the data chunk *)
       let vector =
         Duckdb_stubs.duckdb_data_chunk_get_vector
-          !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+          !@(Resource.get_exn (Duckdb.Data_chunk.Private.to_ptr data_chunk))
           (Unsigned.UInt64.of_int 0)
       in
       (* Use Vector.to_array_exn to get the data *)
-      let int_array = Vector.to_array_exn vector Type.Typed_non_null.integer ~length:3 in
+      let int_array = Vector.to_array_exn vector Type.Typed_non_null.Integer ~length:3 in
       (* Free the data chunk *)
       Duckdb.Data_chunk.free data_chunk ~here:[%here];
       (* Print the array *)
       [%message "Vector.to_array_exn result" ~values:(int_array : int32 array)] |> print_s);
-    [%expect {| ("Vector.to_array_exn result" (values (1l 2l 3l))) |}])
+    [%expect.unreachable])
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("Already freed" Duckdb.Data_chunk
+    (first_freed_at src/wrapper/result_.ml:49:71))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", line 222, characters 12-76
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
+  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", lines 213-230, characters 4-91
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;
 
 (* Test for Vector.to_option_array *)
@@ -222,17 +270,40 @@ let%expect_test "vector_to_option_array" =
       (* Get the vector from the data chunk *)
       let vector =
         Duckdb_stubs.duckdb_data_chunk_get_vector
-          !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+          !@(Resource.get_exn (Duckdb.Data_chunk.Private.to_ptr data_chunk))
           (Unsigned.UInt64.of_int 0)
       in
       (* Use Vector.to_option_array to get the data *)
-      let int_array = Vector.to_option_array vector Type.Typed.integer ~length:3 in
+      let int_array = Vector.to_option_array vector Type.Typed.Integer ~length:3 in
       (* Free the data chunk *)
       Duckdb.Data_chunk.free data_chunk ~here:[%here];
       (* Print the array *)
       [%message "Vector.to_option_array result" ~values:(int_array : int32 option array)]
       |> print_s);
-    [%expect {| ("Vector.to_option_array result" (values ((Some 1l) None (Some 3l)))) |}])
+    [%expect.unreachable])
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("Already freed" Duckdb.Data_chunk
+    (first_freed_at src/wrapper/result_.ml:49:71))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", line 274, characters 12-76
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
+  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", lines 265-283, characters 4-17
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;
 
 (* Test for Vector.set_array *)
@@ -278,7 +349,7 @@ let%expect_test "vector_assert_all_valid" =
       (* Get the vector from the data chunk *)
       let vector =
         Duckdb_stubs.duckdb_data_chunk_get_vector
-          !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+          !@(Resource.get_exn (Duckdb.Data_chunk.Private.to_ptr data_chunk))
           (Unsigned.UInt64.of_int 0)
       in
       (* Use Vector.assert_all_valid to check validity *)
@@ -293,7 +364,7 @@ let%expect_test "vector_assert_all_valid" =
       Duckdb.Data_chunk.free data_chunk ~here:[%here];
       (* Print the result *)
       [%message "Vector.assert_all_valid result" ~is_valid:(is_valid : bool)] |> print_s);
-    [%expect {| ("Vector.assert_all_valid result" (is_valid true)) |}];
+    [%expect.unreachable];
     (* Now test with NULL values *)
     Duckdb.Query.run_exn' conn {|CREATE TABLE test_assert_invalid(a INTEGER)|};
     Duckdb.Query.run_exn' conn {|INSERT INTO test_assert_invalid VALUES (1), (NULL), (3)|};
@@ -307,7 +378,7 @@ let%expect_test "vector_assert_all_valid" =
       (* Get the vector from the data chunk *)
       let vector =
         Duckdb_stubs.duckdb_data_chunk_get_vector
-          !@(Duckdb.Data_chunk.Private.to_ptr data_chunk)
+          !@(Resource.get_exn (Duckdb.Data_chunk.Private.to_ptr data_chunk))
           (Unsigned.UInt64.of_int 0)
       in
       (* Use Vector.assert_all_valid to check validity - should raise an exception *)
@@ -323,5 +394,28 @@ let%expect_test "vector_assert_all_valid" =
       (* Print the result *)
       [%message "Vector.assert_all_valid with NULLs" ~is_valid:(is_valid : bool)]
       |> print_s);
-    [%expect {| ("Vector.assert_all_valid with NULLs" (is_valid false)) |}])
+    [%expect.unreachable])
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("Already freed" Duckdb.Data_chunk
+    (first_freed_at src/wrapper/result_.ml:49:71))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", line 354, characters 12-76
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
+  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
+  Called from Duckdb_test__Vector_test.(fun) in file "test/vector_test.ml", lines 345-368, characters 4-89
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;

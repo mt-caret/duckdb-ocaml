@@ -111,7 +111,8 @@ let%expect_test "result_fetch" =
       (* Print the array *)
       [%message "Fetched data" ~values:(int_array : int32 array)] |> print_s));
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
