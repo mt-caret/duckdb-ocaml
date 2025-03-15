@@ -22,8 +22,10 @@ module Prepared : sig
   type t
 
   val create : Connection.t -> string -> (t, string) result
+  val create_exn : Connection.t -> string -> t
   val destroy : t -> here:Source_code_position.t -> unit
   val bind : t -> Parameters.t -> (unit, string) result
+  val bind_exn : t -> Parameters.t -> unit
   val clear_bindings_exn : t -> unit
   val run : t -> f:(Result_.t -> 'a) -> ('a, Error.t) result
   val run' : t -> (unit, Error.t) result

@@ -9,7 +9,7 @@ module Error = struct
   [@@deriving sexp, fields ~getters]
 
   let create (result : Result_.t) =
-    let result = Result_.Private.to_struct result |> Resource.get_exn in
+    let result = Resource.get_exn (Result_.Private.get_exn result) in
     { kind = Duckdb_stubs.duckdb_result_error_type (addr result)
     ; message = Duckdb_stubs.duckdb_result_error (addr result)
     }
@@ -25,15 +25,15 @@ let run conn query ~f =
     Duckdb_stubs.duckdb_query
       !@conn
       query
-      (Some (addr (Resource.get_exn (Result_.Private.to_struct result))))
+      (Some (addr (Resource.get_exn (Result_.Private.get_exn result))))
   with
   | DuckDBError ->
     let error = Error.create result in
-    Resource.free (Result_.Private.to_struct result) ~here:[%here];
+    Resource.free (Result_.Private.get_exn result) ~here:[%here];
     Error error
   | DuckDBSuccess ->
     protectx result ~f ~finally:(fun result ->
-      Result_.Private.to_struct result |> Resource.free ~here:[%here])
+      Result_.Private.get_exn result |> Resource.free ~here:[%here])
     |> Ok
 ;;
 
@@ -140,6 +140,8 @@ module Prepared = struct
       Error (Option.value_exn error)
   ;;
 
+  let create_exn conn query = create conn query |> Result.ok_or_failwith
+
   let bind =
     let rec go t (parameters : Parameters.t) index =
       match parameters with
@@ -166,6 +168,8 @@ module Prepared = struct
       | true -> go t parameters 1
   ;;
 
+  let bind_exn t parameters = bind t parameters |> Result.ok_or_failwith
+
   let clear_bindings_exn t =
     let t = Resource.get_exn t in
     match Duckdb_stubs.duckdb_clear_bindings !@t with
@@ -181,15 +185,15 @@ module Prepared = struct
     match
       Duckdb_stubs.duckdb_execute_prepared
         !@t
-        (Some (addr (Resource.get_exn (Result_.Private.to_struct result))))
+        (Some (addr (Resource.get_exn (Result_.Private.get_exn result))))
     with
     | DuckDBError ->
       let error = Error.create result in
-      Resource.free (Result_.Private.to_struct result) ~here:[%here];
+      Resource.free (Result_.Private.get_exn result) ~here:[%here];
       Error error
     | DuckDBSuccess ->
       protectx result ~f ~finally:(fun result ->
-        Result_.Private.to_struct result |> Resource.free ~here:[%here])
+        Result_.Private.get_exn result |> Resource.free ~here:[%here])
       |> Ok
   ;;
 

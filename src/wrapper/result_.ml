@@ -26,16 +26,18 @@ let schema (t : t) =
     name, type_)
 ;;
 
+(* These functions are removed as they're redundant with schema *)
+
 let fetch (t : t) ~f =
   let t' = Resource.get_exn t in
   match Duckdb_stubs.duckdb_fetch_chunk t' with
   | None -> f None
   | Some data_chunk ->
-    Data_chunk.Private.create data_chunk
-    |> protectx
-         ~f:(fun data_chunk -> f (Some data_chunk))
-         ~finally:(fun data_chunk ->
-           Data_chunk.Private.to_ptr data_chunk |> Resource.free ~here:[%here])
+    let data_chunk = Data_chunk.Private.create data_chunk in
+    protectx
+      data_chunk
+      ~f:(fun data_chunk -> f (Some data_chunk))
+      ~finally:(fun data_chunk -> Data_chunk.free data_chunk ~here:[%here])
 ;;
 
 let fetch_all t =
@@ -91,5 +93,5 @@ let to_string_hum ?(bars = `Unicode) t =
 ;;
 
 module Private = struct
-  let to_struct = Fn.id
+  let get_exn = Fn.id
 end
