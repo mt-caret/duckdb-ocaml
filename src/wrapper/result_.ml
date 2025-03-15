@@ -28,7 +28,6 @@ let schema (t : t) =
 
 (* These functions are removed as they're redundant with schema *)
 
-
 let fetch (t : t) ~f =
   let t' = Resource.get_exn t in
   match Duckdb_stubs.duckdb_fetch_chunk t' with
