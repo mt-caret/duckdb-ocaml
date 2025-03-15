@@ -303,6 +303,12 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_data_chunk_get_size" (Types.Data_chunk.t @-> returning Types.idx_t)
   ;;
 
+  let duckdb_data_chunk_set_size =
+    foreign
+      "duckdb_data_chunk_set_size"
+      (Types.Data_chunk.t @-> Types.idx_t @-> returning void)
+  ;;
+
   let duckdb_data_chunk_get_vector =
     foreign
       "duckdb_data_chunk_get_vector"
@@ -602,6 +608,74 @@ module Functions (F : FOREIGN) = struct
     foreign "duckdb_create_decimal" (Types.Decimal.t @-> returning Types.Value.t)
   ;;
 
+  let duckdb_get_bool = foreign "duckdb_get_bool" (Types.Value.t @-> returning bool)
+  let duckdb_get_int8 = foreign "duckdb_get_int8" (Types.Value.t @-> returning int8_t)
+  let duckdb_get_uint8 = foreign "duckdb_get_uint8" (Types.Value.t @-> returning uint8_t)
+  let duckdb_get_int16 = foreign "duckdb_get_int16" (Types.Value.t @-> returning int16_t)
+
+  let duckdb_get_uint16 =
+    foreign "duckdb_get_uint16" (Types.Value.t @-> returning uint16_t)
+  ;;
+
+  let duckdb_get_int32 = foreign "duckdb_get_int32" (Types.Value.t @-> returning int32_t)
+
+  let duckdb_get_uint32 =
+    foreign "duckdb_get_uint32" (Types.Value.t @-> returning uint32_t)
+  ;;
+
+  let duckdb_get_int64 = foreign "duckdb_get_int64" (Types.Value.t @-> returning int64_t)
+
+  let duckdb_get_uint64 =
+    foreign "duckdb_get_uint64" (Types.Value.t @-> returning uint64_t)
+  ;;
+
+  let duckdb_get_hugeint =
+    foreign "duckdb_get_hugeint" (Types.Value.t @-> returning Types.Hugeint.t)
+  ;;
+
+  let duckdb_get_uhugeint =
+    foreign "duckdb_get_uhugeint" (Types.Value.t @-> returning Types.Uhugeint.t)
+  ;;
+
+  let duckdb_get_float = foreign "duckdb_get_float" (Types.Value.t @-> returning float)
+  let duckdb_get_double = foreign "duckdb_get_double" (Types.Value.t @-> returning double)
+
+  let duckdb_get_date =
+    foreign "duckdb_get_date" (Types.Value.t @-> returning Types.Date.t)
+  ;;
+
+  let duckdb_get_time =
+    foreign "duckdb_get_time" (Types.Value.t @-> returning Types.Time.t)
+  ;;
+
+  let duckdb_get_timestamp =
+    foreign "duckdb_get_timestamp" (Types.Value.t @-> returning Types.Timestamp.t)
+  ;;
+
+  let duckdb_get_timestamp_s =
+    foreign "duckdb_get_timestamp_s" (Types.Value.t @-> returning Types.Timestamp_s.t)
+  ;;
+
+  let duckdb_get_timestamp_ms =
+    foreign "duckdb_get_timestamp_ms" (Types.Value.t @-> returning Types.Timestamp_ms.t)
+  ;;
+
+  let duckdb_get_timestamp_ns =
+    foreign "duckdb_get_timestamp_ns" (Types.Value.t @-> returning Types.Timestamp_ns.t)
+  ;;
+
+  let duckdb_get_interval =
+    foreign "duckdb_get_interval" (Types.Value.t @-> returning Types.Interval.t)
+  ;;
+
+  let duckdb_get_blob =
+    foreign "duckdb_get_blob" (Types.Value.t @-> returning Types.Blob.t)
+  ;;
+
+  let duckdb_get_varchar =
+    foreign "duckdb_get_varchar" (Types.Value.t @-> returning (ptr char))
+  ;;
+
   let duckdb_appender_create =
     foreign
       "duckdb_appender_create"
@@ -802,6 +876,90 @@ module Functions (F : FOREIGN) = struct
     foreign
       "duckdb_scalar_function_set_error"
       (Types.Function_info.t @-> string @-> returning void)
+  ;;
+
+  let duckdb_create_table_function =
+    foreign "duckdb_create_table_function" (void @-> returning Types.Table_function.t)
+  ;;
+
+  let duckdb_destroy_table_function =
+    foreign "duckdb_destroy_table_function" (ptr Types.Table_function.t @-> returning void)
+  ;;
+
+  let duckdb_table_function_set_name =
+    foreign
+      "duckdb_table_function_set_name"
+      (Types.Table_function.t @-> string @-> returning void)
+  ;;
+
+  let duckdb_table_function_add_parameter =
+    foreign
+      "duckdb_table_function_add_parameter"
+      (Types.Table_function.t @-> Types.Logical_type.t @-> returning void)
+  ;;
+
+  let duckdb_table_function_set_bind =
+    foreign
+      "duckdb_table_function_set_bind"
+      (Types.Table_function.t @-> Types.Table_function.bind @-> returning void)
+  ;;
+
+  let duckdb_table_function_set_init =
+    foreign
+      "duckdb_table_function_set_init"
+      (Types.Table_function.t @-> Types.Table_function.init @-> returning void)
+  ;;
+
+  let duckdb_table_function_set_function =
+    foreign
+      "duckdb_table_function_set_function"
+      (Types.Table_function.t @-> Types.Table_function.function_ @-> returning void)
+  ;;
+
+  let duckdb_table_function_supports_projection_pushdown =
+    foreign
+      "duckdb_table_function_supports_projection_pushdown"
+      (Types.Table_function.t @-> bool @-> returning void)
+  ;;
+
+  let duckdb_register_table_function =
+    foreign
+      "duckdb_register_table_function"
+      (Types.Connection.t @-> Types.Table_function.t @-> returning Types.State.t)
+  ;;
+
+  let duckdb_bind_add_result_column =
+    foreign
+      "duckdb_bind_add_result_column"
+      (Types.Bind_info.t @-> string @-> Types.Logical_type.t @-> returning void)
+  ;;
+
+  let duckdb_bind_get_parameter_count =
+    foreign "duckdb_bind_get_parameter_count" (Types.Bind_info.t @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_bind_get_parameter =
+    foreign
+      "duckdb_bind_get_parameter"
+      (Types.Bind_info.t @-> Types.idx_t @-> returning Types.Value.t)
+  ;;
+
+  let duckdb_bind_set_error =
+    foreign "duckdb_bind_set_error" (Types.Bind_info.t @-> string @-> returning void)
+  ;;
+
+  let duckdb_init_get_column_count =
+    foreign "duckdb_init_get_column_count" (Types.Init_info.t @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_init_get_column_index =
+    foreign
+      "duckdb_init_get_column_index"
+      (Types.Init_info.t @-> Types.idx_t @-> returning Types.idx_t)
+  ;;
+
+  let duckdb_init_set_error =
+    foreign "duckdb_init_set_error" (Types.Init_info.t @-> string @-> returning void)
   ;;
 
   let duckdb_add_replacement_scan =

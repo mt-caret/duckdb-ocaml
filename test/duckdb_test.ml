@@ -324,3 +324,82 @@ let%expect_test "replacement scan" =
           "Binder Error: Error in replacement scan: \"42 is not a valid table name!\"\n"))
         |}]))
 ;;
+
+(* TODO: A cleaner/safer API here would be nice. *)
+let%expect_test "table function registration" =
+  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      let size = ref 0 in
+      let pos = ref 0 in
+      Duckdb.Table_function.add
+        "my_function"
+        [ Big_int ]
+        ~bind:(fun info ->
+          print_endline "bind is called";
+          [%test_result: int]
+            (Duckdb_stubs.duckdb_bind_get_parameter_count info |> Unsigned.UInt64.to_int)
+            ~expect:1;
+          let value = Duckdb_stubs.duckdb_bind_get_parameter info Unsigned.UInt64.zero in
+          let value = Duckdb.Value.get_non_null Big_int value in
+          size := Int64.to_int_exn value;
+          Duckdb.Type.to_logical_type Big_int
+          |> Duckdb.Type.Private.with_logical_type ~f:(fun logical_type ->
+            Duckdb_stubs.duckdb_bind_add_result_column info "forty_two" logical_type))
+        ~init:(fun _info ->
+          print_endline "init is called";
+          pos := 0)
+        ~f:(fun _info chunk ->
+          print_endline "function is called";
+          let vector =
+            Duckdb_stubs.duckdb_data_chunk_get_vector chunk Unsigned.UInt64.zero
+          in
+          let chunk_size =
+            min
+              (!size - !pos)
+              (* TODO: expose STANDARD_VECTOR_SIZE in wrapper library somehow. *)
+              2048
+          in
+          Array.init chunk_size ~f:(fun i -> if (!pos + i) % 2 = 0 then 42L else 84L)
+          |> Duckdb.Vector.set_array vector Big_int;
+          Duckdb_stubs.duckdb_data_chunk_set_size
+            chunk
+            (Unsigned.UInt64.of_int chunk_size);
+          pos := !pos + chunk_size)
+        ~conn;
+      (* Errors when trying to use as a scalar function *)
+      Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+        Duckdb.Query.run_exn conn "SELECT my_function(1)" ~f:print_result);
+      [%expect
+        {|
+        ((kind DUCKDB_ERROR_BINDER)
+         (message
+          "Binder Error: Function \"my_function\" is a table function but it was used as a scalar function. This function has to be called in a FROM clause (similar to a table).\n\nLINE 1: SELECT my_function(1)\n               ^"))
+        |}];
+      Duckdb.Query.run_exn conn "SELECT * FROM my_function(1)" ~f:print_result;
+      [%expect
+        {|
+        bind is called
+        init is called
+        function is called
+        function is called
+        ┌───────────┐
+        │ forty_two │
+        │ Big_int   │
+        ├───────────┤
+        │ 42        │
+        └───────────┘
+        |}];
+      (* Function can be called many times. *)
+      Duckdb.Query.run_exn conn "SELECT * FROM my_function(4000)" ~f:(fun result ->
+        let count, _rows = Duckdb.Result_.fetch_all result in
+        print_s [%message "rows" (count : int)]);
+      [%expect
+        {|
+        bind is called
+        init is called
+        function is called
+        function is called
+        function is called
+        (rows (count 4000))
+        |}]))
+;;
