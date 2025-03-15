@@ -36,8 +36,7 @@ let%expect_test "value_create_non_null" =
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Duckdb.Query.run_exn' conn "SET threads TO 1";
       (* Create a prepared statement that uses Value.create_non_null *)
-      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? + ?"
-      in
+      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? + ?" in
       (* Bind values using Value.create_non_null internally *)
       Duckdb.Query.Prepared.bind_exn prepared [ Integer, 40l; Integer, 2l ];
       (* Execute the prepared statement *)
@@ -62,8 +61,7 @@ let%expect_test "value_create_complex_types" =
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Duckdb.Query.run_exn' conn "SET threads TO 1";
       (* Test list values *)
-      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? as list_value"
-      in
+      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? as list_value" in
       (* Bind a list value *)
       Duckdb.Query.Prepared.bind_exn prepared [ List Integer, [ 1l; 2l; 3l; 4l; 5l ] ];
       (* Execute the prepared statement *)

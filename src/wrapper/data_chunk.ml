@@ -31,8 +31,8 @@ let free t ~here = Resource.free t.data_chunk ~here
 
 let to_string_hum ?(bars = `Unicode) ~column_count t =
   match t.length, column_count with
-  | 0, _ -> ""  (* Empty data chunk *)
-  | _, 0 -> ""  (* No columns to display *)
+  | 0, _ -> "" (* Empty data chunk *)
+  | _, 0 -> "" (* No columns to display *)
   | _, _ ->
     (* Convert `None to `Ascii since to_string_noattr doesn't accept `None *)
     let bars' =
