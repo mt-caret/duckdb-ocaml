@@ -42,11 +42,11 @@ let fetch (t : t) ~f =
   match Duckdb_stubs.duckdb_fetch_chunk t' with
   | None -> f None
   | Some data_chunk ->
-    Data_chunk.Private.create data_chunk
-    |> protectx
-         ~f:(fun data_chunk -> f (Some data_chunk))
-         ~finally:(fun data_chunk ->
-           Data_chunk.Private.to_ptr data_chunk |> Resource.free ~here:[%here])
+    let data_chunk = Data_chunk.Private.create data_chunk in
+    protectx
+      data_chunk
+      ~f:(fun data_chunk -> f (Some data_chunk))
+      ~finally:(fun data_chunk -> Data_chunk.free data_chunk ~here:[%here])
 ;;
 
 let fetch_all t =
