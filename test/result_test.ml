@@ -111,13 +111,12 @@ let%expect_test "result_fetch" =
       (* Print the array *)
       [%message "Fetched data" ~values:(int_array : int32 array)] |> print_s));
   [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
+[@@expect.uncaught_exn {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
   ("Already freed" Duckdb.Data_chunk
-    (first_freed_at src/wrapper/result_.ml:49:71))
+    (first_freed_at src/wrapper/result_.ml:49:67))
   Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
   Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
   Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
