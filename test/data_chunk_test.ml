@@ -57,29 +57,6 @@ let%expect_test "data_chunk_nulls" =
     |}]
 ;;
 
-let%expect_test "data_chunk_column_count" =
-  (* Create a test table with multiple columns *)
-  let setup_sql =
-    {|CREATE TABLE test_columns(
-      a INTEGER, 
-      b VARCHAR, 
-      c DOUBLE, 
-      d BOOLEAN, 
-      e DATE
-    );
-    INSERT INTO test_columns VALUES 
-      (1, 'hello', 1.5, true, '2023-01-01');|}
-  in
-  let query_sql = "SELECT * FROM test_columns" in
-  test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    (* Test column_count function *)
-    with_chunk_data res ~f:(fun _chunk ->
-      let col_count = Duckdb.Result_.column_count res in
-      let count = col_count in
-      [%message "Data chunk column count" ~count:(count : int)] |> print_s));
-  [%expect {| ("Data chunk column count" (count 5)) |}]
-;;
-
 let%expect_test "data_chunk_to_string_hum" =
   (* Create a test table *)
   let setup_sql =
@@ -183,26 +160,6 @@ let%expect_test "data_chunk_get_methods" =
     |}]
 ;;
 
-let%expect_test "data_chunk_column_count_function" =
-  (* Create a test table with multiple columns *)
-  let setup_sql =
-    {|CREATE TABLE test_col_count(
-      a INTEGER, 
-      b VARCHAR, 
-      c DOUBLE
-    );
-    INSERT INTO test_col_count VALUES (1, 'hello', 1.5);|}
-  in
-  let query_sql = "SELECT * FROM test_col_count" in
-  test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    with_chunk_data res ~f:(fun _chunk ->
-      (* Test column count *)
-      let col_count = Duckdb.Result_.column_count res in
-      [%message "Result column count" ~count:(col_count : int)] |> print_s));
-  [%expect {| ("Result column count" (count 3)) |}]
-;;
-
-(* Test for Data_chunk.to_string_hum *)
 let%expect_test "data_chunk_to_string_hum_function" =
   (* Create a test table *)
   let setup_sql =

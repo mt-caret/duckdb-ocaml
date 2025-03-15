@@ -1,5 +1,6 @@
 open! Core
 open! Ctypes
+open Test_helpers
 
 let%expect_test "duckdb_library_version" =
   Duckdb_stubs.duckdb_library_version () |> print_endline;
@@ -175,96 +176,84 @@ let%expect_test "appender" =
 ;;
 
 let%expect_test "scalar function registration" =
-  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
-    Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "multiply_numbers_together"
-          (Small_int :: Small_int :: Returning Small_int)
-          ~f:( * )
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
-      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
-      [%expect
-        {|
-        ┌─────────────────────────────────┐
-        │ multiply_numbers_together(2, 4) │
-        │ Small_int                       │
-        ├─────────────────────────────────┤
-        │ 8                               │
-        └─────────────────────────────────┘
-        |}]))
+  with_single_threaded_db (fun conn ->
+    let scalar_function =
+      Duckdb.Scalar_function.create
+        "multiply_numbers_together"
+        (Small_int :: Small_int :: Returning Small_int)
+        ~f:( * )
+    in
+    Duckdb.Scalar_function.register_exn scalar_function conn;
+    Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
+    [%expect
+      {|
+      ┌─────────────────────────────────┐
+      │ multiply_numbers_together(2, 4) │
+      │ Small_int                       │
+      ├─────────────────────────────────┤
+      │ 8                               │
+      └─────────────────────────────────┘
+      |}])
 ;;
 
 let%expect_test "scalar function raises an exception" =
-  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
-    Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "multiply_numbers_together"
-          (Small_int :: Small_int :: Returning Small_int)
-          ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
-      Expect_test_helpers_core.require_does_raise [%here] (fun () ->
-        Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result);
-      [%expect
-        {|
-        ((kind DUCKDB_ERROR_INVALID_INPUT)
-         (message "Invalid Input Error: \"This is a test exception\""))
-        |}]))
+  with_single_threaded_db (fun conn ->
+    let scalar_function =
+      Duckdb.Scalar_function.create
+        "multiply_numbers_together"
+        (Small_int :: Small_int :: Returning Small_int)
+        ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
+    in
+    Duckdb.Scalar_function.register_exn scalar_function conn;
+    Expect_test_helpers_core.require_does_raise [%here] (fun () ->
+      Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result);
+    [%expect
+      {|
+      ((kind DUCKDB_ERROR_INVALID_INPUT)
+       (message "Invalid Input Error: \"This is a test exception\""))
+      |}])
 ;;
 
 let%expect_test "scalar function string concatenation" =
-  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
-    Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "string_concat"
-          (Var_char :: Var_char :: Returning Var_char)
-          ~f:( ^ )
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
-      Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
-      [%expect
-        {|
-        ┌──────────────────────────────────┐
-        │ string_concat('hello', ' world') │
-        │ Var_char                         │
-        ├──────────────────────────────────┤
-        │ hello world                      │
-        └──────────────────────────────────┘
-        |}]))
+  with_single_threaded_db (fun conn ->
+    let scalar_function =
+      Duckdb.Scalar_function.create
+        "string_concat"
+        (Var_char :: Var_char :: Returning Var_char)
+        ~f:( ^ )
+    in
+    Duckdb.Scalar_function.register_exn scalar_function conn;
+    Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
+    [%expect
+      {|
+      ┌──────────────────────────────────┐
+      │ string_concat('hello', ' world') │
+      │ Var_char                         │
+      ├──────────────────────────────────┤
+      │ hello world                      │
+      └──────────────────────────────────┘
+      |}])
 ;;
 
 let%expect_test "scalar function tupling" =
-  Duckdb.Database.with_path ":memory:" ~f:(fun db ->
-    Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "string_concat"
-          (Var_char :: Var_char :: Returning (List Var_char))
-          ~f:(fun a b -> [ a; b ])
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
-      Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
-      [%expect
-        {|
-        ┌──────────────────────────────────┐
-        │ string_concat('hello', ' world') │
-        │ (List Var_char)                  │
-        ├──────────────────────────────────┤
-        │ [ hello,  world ]                │
-        └──────────────────────────────────┘
-        |}]))
+  with_single_threaded_db (fun conn ->
+    let scalar_function =
+      Duckdb.Scalar_function.create
+        "string_concat"
+        (Var_char :: Var_char :: Returning (List Var_char))
+        ~f:(fun a b -> [ a; b ])
+    in
+    Duckdb.Scalar_function.register_exn scalar_function conn;
+    Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
+    [%expect
+      {|
+      ┌──────────────────────────────────┐
+      │ string_concat('hello', ' world') │
+      │ (List Var_char)                  │
+      ├──────────────────────────────────┤
+      │ [ hello,  world ]                │
+      └──────────────────────────────────┘
+      |}])
 ;;
 
 let%expect_test "test querying short and long strings" =
