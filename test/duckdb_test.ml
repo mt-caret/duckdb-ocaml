@@ -321,6 +321,8 @@ let%expect_test "replacement scan" =
 let%expect_test "table function registration" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       let size = ref 0 in
       let pos = ref 0 in
       Duckdb.Table_function.add
@@ -396,6 +398,8 @@ let%expect_test "table function registration" =
         |}]);
     (* Table function persists across connections *)
     Duckdb.Connection.with_connection db ~f:(fun conn ->
+      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
+      Single_thread_fix.set_single_threaded conn;
       Duckdb.Query.run_exn conn "SELECT * FROM my_function(1)" ~f:print_result;
       [%expect
         {|
