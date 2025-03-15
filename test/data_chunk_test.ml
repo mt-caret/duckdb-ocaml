@@ -198,8 +198,8 @@ let%expect_test "data_chunk_column_count_function" =
     with_chunk_data res ~f:(fun _chunk ->
       (* Test column count *)
       let col_count = Duckdb.Result_.column_count res in
-      [%message "Data_chunk.column_count result" ~count:(col_count : int)] |> print_s));
-  [%expect {| ("Data_chunk.column_count result" (count 3)) |}]
+      [%message "Result column count" ~count:(col_count : int)] |> print_s));
+  [%expect {| ("Result column count" (count 3)) |}]
 ;;
 
 (* Test for Data_chunk.to_string_hum *)

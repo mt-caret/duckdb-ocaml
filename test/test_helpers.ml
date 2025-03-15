@@ -33,11 +33,11 @@ let fetch_chunk_exn res =
     Option.value_exn opt ~message:"Expected data chunk but got None")
 ;;
 
-(* Helper function to get data from a chunk and free it *)
+(* Helper function to get data from a chunk *)
 let with_chunk_data res ~f =
   let chunk = fetch_chunk_exn res in
-  (* Copy any data we need before freeing the chunk *)
+  (* Process the chunk data *)
   let result = f chunk in
-  (* Don't free the chunk as it's already managed by the Result_ module *)
+  (* The chunk is managed by the Result_ module, so we don't need to free it *)
   result
 ;;
