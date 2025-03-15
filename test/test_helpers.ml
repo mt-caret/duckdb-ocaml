@@ -1,7 +1,8 @@
 open! Core
 open! Ctypes
 
-(* Helper function to set DuckDB to single-threaded mode *)
+(* Helper function to set DuckDB to single-threaded mode 
+   This is necessary for tests that use OCaml callbacks with DuckDB to avoid segmentation faults *)
 let set_single_threaded conn = Duckdb.Query.run_exn' conn "SET threads TO 1"
 
 (* Helper function to set up single-threaded mode for all tests *)
