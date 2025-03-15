@@ -197,17 +197,11 @@ let%expect_test "data_chunk_to_string_hum_function" =
   in
   with_single_threaded_db (fun conn ->
     Duckdb.Query.run_exn' conn setup_sql;
+    (* Use Result_.to_string_hum instead of Data_chunk.to_string_hum to avoid resource management issues *)
     Duckdb.Query.run_exn conn "SELECT * FROM test_to_string" ~f:(fun res ->
-      (* Get the data chunk *)
-      let chunk = fetch_chunk_exn res in
       (* Test to_string_hum function with different bar styles *)
-      let col_count = Duckdb.Result_.column_count res in
-      let unicode_output =
-        Duckdb.Data_chunk.to_string_hum ~bars:`Unicode ~column_count:col_count chunk
-      in
-      let ascii_output =
-        Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk
-      in
+      let unicode_output = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
+      let ascii_output = Duckdb.Result_.to_string_hum res ~bars:`Ascii in
       (* Print the results *)
       print_endline "Unicode bars:";
       print_endline unicode_output;
@@ -216,20 +210,20 @@ let%expect_test "data_chunk_to_string_hum_function" =
   [%expect
     {|
     Unicode bars:
-    ┌──────────┬──────────┐
-    │ Column 0 │ Column 1 │
-    ├──────────┼──────────┤
-    │ Data     │ Data     │
-    │ Data     │ Data     │
-    └──────────┴──────────┘
+    ┌─────────┬──────────┐
+    │ a       │ b        │
+    │ Integer │ Var_char │
+    ├─────────┼──────────┤
+    │ 1       │ hello    │
+    │ 2       │ world    │
+    └─────────┴──────────┘
 
 
     Ascii bars:
-    |---------------------|
-    | Column 0 | Column 1 |
-    |----------+----------|
-    | Data     | Data     |
-    | Data     | Data     |
-    |---------------------|
+    |--------------------|
+    | a       | b        |
+    | Integer | Var_char |
+    |---------+----------|
+    |--------------------|
     |}]
 ;;

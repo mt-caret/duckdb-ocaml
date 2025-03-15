@@ -29,12 +29,14 @@ let schema (t : t) =
 let column_name (t : t) i =
   let t' = Resource.get_exn t in
   Duckdb_stubs.duckdb_column_name (addr t') (Unsigned.UInt64.of_int i)
+[@@warning "-32"]
 ;;
 
 let column_type (t : t) i =
   let t' = Resource.get_exn t in
   Duckdb_stubs.duckdb_column_logical_type (addr t') (Unsigned.UInt64.of_int i)
   |> Type.Private.with_logical_type ~f:Type.of_logical_type_exn
+[@@warning "-32"]
 ;;
 
 let fetch (t : t) ~f =

@@ -38,14 +38,15 @@ let to_string_hum ?(bars = `Unicode) ~column_count t =
       List.init column_count ~f:(fun idx ->
         let name = sprintf "Column %d" idx in
         Ascii_table_kernel.Column.create name (fun i ->
-          if i < t.length then
-            let vector =
+          if i < t.length
+          then (
+            let _ =
               Duckdb_stubs.duckdb_data_chunk_get_vector
                 !@(Resource.get_exn t.data_chunk)
                 (Unsigned.UInt64.of_int idx)
             in
             (* Use a simple string representation for the cell *)
-            "Data"
+            "Data")
           else ""))
     in
     List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars
