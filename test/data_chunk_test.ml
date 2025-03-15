@@ -216,21 +216,15 @@ let%expect_test "data_chunk_to_string_hum_function" =
   in
   with_single_threaded_db (fun conn ->
     Duckdb.Query.run_exn' conn setup_sql;
-    (* Test Data_chunk.to_string_hum directly *)
     Duckdb.Query.run_exn conn "SELECT * FROM test_to_string" ~f:(fun res ->
+      let schema = Duckdb.Result_.schema res in
       Duckdb.Result_.fetch res ~f:(function
         | None -> failwith "Expected data chunk but got None"
         | Some chunk ->
-          (* Get the column count from the result *)
-          let column_count = Duckdb.Result_.column_count res in
-          (* Test to_string_hum function with different bar styles *)
           let unicode_output =
-            Duckdb.Data_chunk.to_string_hum chunk ~column_count ~bars:`Unicode
+            Duckdb.Data_chunk.to_string_hum chunk ~schema ~bars:`Unicode
           in
-          let ascii_output =
-            Duckdb.Data_chunk.to_string_hum chunk ~column_count ~bars:`Ascii
-          in
-          (* Print the results *)
+          let ascii_output = Duckdb.Data_chunk.to_string_hum chunk ~schema ~bars:`Ascii in
           print_endline "Data_chunk.to_string_hum with Unicode bars:";
           print_endline unicode_output;
           print_endline "\nData_chunk.to_string_hum with Ascii bars:";
@@ -238,20 +232,20 @@ let%expect_test "data_chunk_to_string_hum_function" =
   [%expect
     {|
     Data_chunk.to_string_hum with Unicode bars:
-    ┌──────────┬──────────┐
-    │ Column 0 │ Column 1 │
-    ├──────────┼──────────┤
-    │ Data     │ Data     │
-    │ Data     │ Data     │
-    └──────────┴──────────┘
+    ┌───┬───────┐
+    │ a │ b     │
+    ├───┼───────┤
+    │ 1 │ hello │
+    │ 2 │ world │
+    └───┴───────┘
 
 
     Data_chunk.to_string_hum with Ascii bars:
-    |---------------------|
-    | Column 0 | Column 1 |
-    |----------+----------|
-    | Data     | Data     |
-    | Data     | Data     |
-    |---------------------|
+    |-----------|
+    | a | b     |
+    |---+-------|
+    | 1 | hello |
+    | 2 | world |
+    |-----------|
     |}]
 ;;

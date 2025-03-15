@@ -29,29 +29,22 @@ let get_opt t type_ idx =
 
 let free t ~here = Resource.free t.data_chunk ~here
 
-(** Returns a human-readable string representation of the data chunk.
-    The ~column_count parameter specifies how many columns to display. *)
-let to_string_hum ?(bars = `Unicode) ~column_count t =
-  match t.length, column_count with
-  | 0, _ | _, 0 -> ""
-  | length, count ->
-    let columns =
-      List.init count ~f:(fun idx ->
-        let name = sprintf "Column %d" idx in
-        Ascii_table_kernel.Column.create name (fun i ->
-          if i < length
-          then (
-            (* Get the vector but don't use it directly in this simplified implementation *)
-            let _ =
-              Duckdb_stubs.duckdb_data_chunk_get_vector
-                !@(Resource.get_exn t.data_chunk)
-                (Unsigned.UInt64.of_int idx)
-            in
-            (* Simple string representation of the cell *)
-            "Data")
-          else ""))
-    in
-    List.range 0 length |> Ascii_table_kernel.to_string_noattr columns ~bars
+let to_string_hum ?(bars = `Unicode) t ~schema =
+  let columns =
+    Array.mapi schema ~f:(fun i (name, type_) ->
+      match Type.Typed.of_untyped type_ with
+      | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
+      | Some (T type_) ->
+        let data =
+          get_opt t type_ i
+          |> Array.map ~f:(function
+            | None -> "null"
+            | Some value -> Type.Typed.to_string_hum type_ value)
+        in
+        Ascii_table_kernel.Column.create name (fun i -> Array.get data i))
+    |> Array.to_list
+  in
+  List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars
 ;;
 
 module Private = struct

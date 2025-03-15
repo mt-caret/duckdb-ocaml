@@ -8,8 +8,12 @@ val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 val free : t -> here:Source_code_position.t -> unit
 
 (** Returns a human-readable string representation of the data chunk.
-    The ~column_count parameter specifies how many columns to display. *)
-val to_string_hum : ?bars:[ `Ascii | `Unicode ] -> column_count:int -> t -> string
+    The ~schema parameter specifies the schema of the data chunk. *)
+val to_string_hum
+  :  ?bars:[ `Ascii | `Unicode ]
+  -> t
+  -> schema:(string * Type.t) array
+  -> string
 
 module Private : sig
   val create : Duckdb_stubs.Data_chunk.t -> t
