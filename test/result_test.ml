@@ -96,7 +96,7 @@ let%expect_test "result_fetch" =
       (* Extract the integer column *)
       let int_values =
         match columns.(0) with
-        | _, Packed_column.T (type_, array) ->
+        | _, Duckdb.Packed_column.T (type_, array) ->
           Array.map array ~f:(fun v ->
             match v with
             | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
