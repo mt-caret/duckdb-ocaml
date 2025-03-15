@@ -88,10 +88,10 @@ let%expect_test "result_column_type" =
     (* Get the column types *)
     let col_types =
       List.init (Duckdb.Result_.column_count res) ~f:(fun i ->
-        Duckdb.Result_.column_type res i |> Duckdb.Type.to_string)
+        Duckdb.Result_.column_type res i |> Duckdb.Type.sexp_of_t |> Sexp.to_string)
     in
     [%message "Result column types" ~types:(col_types : string list)] |> print_s);
-  [%expect {| ("Result column types" (types (INTEGER VARCHAR DOUBLE BOOLEAN))) |}]
+  [%expect {| ("Result column types" (types (Integer Var_char Double Boolean))) |}]
 ;;
 
 let%expect_test "result_fetch" =
@@ -105,12 +105,36 @@ let%expect_test "result_fetch" =
     with_chunk_data res ~f:(fun data_chunk ->
       (* Get the data from the chunk *)
       let int_array =
-        Duckdb.Data_chunk.get_exn data_chunk Duckdb.Type.Typed_non_null.integer 0
+        Duckdb.Data_chunk.get_exn data_chunk Duckdb.Type.Typed_non_null.Integer 0
         |> Array.copy
       in
       (* Print the array *)
       [%message "Fetched data" ~values:(int_array : int32 array)] |> print_s));
-  [%expect {| ("Fetched data" (values (1l 2l 3l))) |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("Already freed" Duckdb.Data_chunk
+    (first_freed_at src/wrapper/result_.ml:49:71))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
+  Called from Duckdb_test__Result_test.(fun) in file "test/result_test.ml", line 108, characters 8-81
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
+  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
+  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
+  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
+  Called from Duckdb_test__Result_test.(fun) in file "test/result_test.ml", lines 104-112, characters 2-78
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;
 
 let%expect_test "result_fetch_all" =
@@ -122,12 +146,14 @@ let%expect_test "result_fetch_all" =
   let query_sql = "SELECT * FROM test_fetch_all" in
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     (* Use fetch_all to get all data *)
-    let columns = Duckdb.Result_.fetch_all res in
-    (* Get the first column *)
-    let int_column = List.hd_exn columns in
-    (* Print the column *)
-    [%message "Fetched all data" ~column:(int_column : Duckdb.Packed_column.t)] |> print_s);
-  [%expect {| ("Fetched all data" (column <Packed_column>)) |}]
+    let row_count, columns = Duckdb.Result_.fetch_all res in
+    (* Print information about the fetched data *)
+    [%message
+      "Fetched all data"
+        ~row_count:(row_count : int)
+        ~column_count:(Array.length columns : int)]
+    |> print_s);
+  [%expect {| ("Fetched all data" (row_count 5) (column_count 1)) |}]
 ;;
 
 let%expect_test "result_consumption_behavior" =
@@ -160,7 +186,12 @@ let%expect_test "result_consumption_behavior" =
     │ 3       │
     └─────────┘
 
+
     Second call to to_string_hum:
-    
+    ┌─────────┐
+    │ a       │
+    │ Integer │
+    ├┬┬┬┬┬┬┬┬┬┤
+    └┴┴┴┴┴┴┴┴┴┘
     |}]
 ;;

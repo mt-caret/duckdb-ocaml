@@ -35,7 +35,8 @@ let fetch_chunk_exn res =
 (* Helper function to get data from a chunk and free it *)
 let with_chunk_data res ~f =
   let chunk = fetch_chunk_exn res in
+  (* Copy any data we need before freeing the chunk *)
   let result = f chunk in
-  Duckdb.Data_chunk.free chunk ~here:[%here];
+  (* Don't free the chunk as it's already managed by the Result_ module *)
   result
 ;;

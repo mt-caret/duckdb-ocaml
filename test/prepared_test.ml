@@ -10,28 +10,23 @@ let%expect_test "prepared_statement_basic" =
       Duckdb.Query.run_exn' conn {|CREATE TABLE test(a INTEGER, b VARCHAR, c DOUBLE)|};
       (* Create a prepared statement for insertion *)
       let prepared_insert =
-        Duckdb.Query.Prepared.create conn {|INSERT INTO test VALUES (?, ?, ?)|}
-        |> Result.ok_or_failwith
+        Duckdb.Query.Prepared.create_exn conn {|INSERT INTO test VALUES (?, ?, ?)|}
       in
       (* Bind and execute with different values *)
-      Duckdb.Query.Prepared.bind
+      Duckdb.Query.Prepared.bind_exn
         prepared_insert
-        [ Integer, 1l; Var_char, "hello"; Double, 1.5 ]
-      |> Result.ok_or_failwith;
+        [ Integer, 1l; Var_char, "hello"; Double, 1.5 ];
       Duckdb.Query.Prepared.run_exn' prepared_insert;
-      Duckdb.Query.Prepared.bind
+      Duckdb.Query.Prepared.bind_exn
         prepared_insert
-        [ Integer, 2l; Var_char, "world"; Double, 2.5 ]
-      |> Result.ok_or_failwith;
+        [ Integer, 2l; Var_char, "world"; Double, 2.5 ];
       Duckdb.Query.Prepared.run_exn' prepared_insert;
       (* Create a prepared statement for selection *)
       let prepared_select =
-        Duckdb.Query.Prepared.create conn {|SELECT * FROM test WHERE a > ? AND c < ?|}
-        |> Result.ok_or_failwith
+        Duckdb.Query.Prepared.create_exn conn {|SELECT * FROM test WHERE a > ? AND c < ?|}
       in
       (* Bind and execute with filter values *)
-      Duckdb.Query.Prepared.bind prepared_select [ Integer, 0l; Double, 2.0 ]
-      |> Result.ok_or_failwith;
+      Duckdb.Query.Prepared.bind_exn prepared_select [ Integer, 0l; Double, 2.0 ];
       Duckdb.Query.Prepared.run_exn prepared_select ~f:(fun res ->
         let result = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
         print_endline result);
@@ -45,8 +40,7 @@ let%expect_test "prepared_statement_basic" =
         └─────────┴──────────┴────────┘
         |}];
       (* Change the binding and execute again *)
-      Duckdb.Query.Prepared.bind prepared_select [ Integer, 1l; Double, 3.0 ]
-      |> Result.ok_or_failwith;
+      Duckdb.Query.Prepared.bind_exn prepared_select [ Integer, 1l; Double, 3.0 ];
       Duckdb.Query.Prepared.run_exn prepared_select ~f:(fun res ->
         let result = Duckdb.Result_.to_string_hum res ~bars:`Unicode in
         print_endline result);

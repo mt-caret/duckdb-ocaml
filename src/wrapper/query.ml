@@ -140,6 +140,12 @@ module Prepared = struct
       Error (Option.value_exn error)
   ;;
 
+  let create_exn conn query =
+    match create conn query with
+    | Ok result -> result
+    | Error msg -> failwith msg
+  ;;
+
   let bind =
     let rec go t (parameters : Parameters.t) index =
       match parameters with
@@ -164,6 +170,12 @@ module Prepared = struct
           [%string
             "Expected %{num_parameters#Int} parameters, got %{actual_parameters#Int}"]
       | true -> go t parameters 1
+  ;;
+
+  let bind_exn t parameters =
+    match bind t parameters with
+    | Ok () -> ()
+    | Error msg -> failwith msg
   ;;
 
   let clear_bindings_exn t =
