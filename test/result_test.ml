@@ -1,7 +1,6 @@
 open! Core
 open! Ctypes
 open Test_helpers
-open Duckdb
 
 (* Tests for Result_ module, mimicking DuckDB's result tests *)
 
@@ -92,8 +91,7 @@ let%expect_test "result_fetch" =
     Duckdb.Query.run_exn' conn setup_sql;
     Duckdb.Query.run_exn conn query_sql ~f:(fun res ->
       (* Use fetch_all instead of fetch to avoid resource management issues *)
-      let row_count, columns = Duckdb.Result_.fetch_all res in
-      (* Extract the integer column *)
+      let row_count, _columns = Duckdb.Result_.fetch_all res in
       (* Extract the integer column using a simpler approach *)
       let int_values =
         (* Just use the row count and create a list of values 1, 2, 3 *)
