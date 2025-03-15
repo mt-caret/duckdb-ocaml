@@ -30,22 +30,21 @@ let get_opt t type_ idx =
 let free t ~here = Resource.free t.data_chunk ~here
 
 let to_string_hum ?(bars = `Unicode) ~column_count t =
-  match t.length, column_count with
-  | 0, _ -> "" (* Empty data chunk *)
-  | _, 0 -> "" (* No columns to display *)
-  | _, _ ->
+  if t.length = 0 || column_count = 0
+  then ""
+  else
     let columns =
       List.init column_count ~f:(fun idx ->
         let name = sprintf "Column %d" idx in
         Ascii_table_kernel.Column.create name (fun i ->
           if i < t.length
           then (
-            let _ =
+            let vector =
               Duckdb_stubs.duckdb_data_chunk_get_vector
                 !@(Resource.get_exn t.data_chunk)
                 (Unsigned.UInt64.of_int idx)
             in
-            (* Use a simple string representation for the cell *)
+            (* Try to get a simple string representation of the cell *)
             "Data")
           else ""))
     in
