@@ -34,19 +34,13 @@ let to_string_hum ?(bars = `Unicode) ~column_count t =
   | 0, _ -> "" (* Empty data chunk *)
   | _, 0 -> "" (* No columns to display *)
   | _, _ ->
-    (* Convert `None to `Ascii since to_string_noattr doesn't accept `None *)
-    let bars' =
-      match bars with
-      | `None -> `Ascii
-      | (`Ascii | `Unicode) as b -> b
-    in
     let columns =
       List.init column_count ~f:(fun idx ->
         let name = sprintf "Column %d" idx in
         Ascii_table_kernel.Column.create name (fun i ->
           if i < t.length then "..." else ""))
     in
-    List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars:bars'
+    List.range 0 t.length |> Ascii_table_kernel.to_string_noattr columns ~bars
 ;;
 
 module Private = struct

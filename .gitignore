@@ -1,2 +1,2 @@
 _build
-src/wrapper/data_chunk.ml.original
+*.original

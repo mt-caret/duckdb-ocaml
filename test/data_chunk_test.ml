@@ -209,7 +209,7 @@ let%expect_test "data_chunk_to_string_hum_function" =
         Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk
       in
       let none_output =
-        Duckdb.Data_chunk.to_string_hum ~bars:`None ~column_count:col_count chunk
+        Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk
       in
       (* Print the results *)
       print_endline "Unicode bars:";

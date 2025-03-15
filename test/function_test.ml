@@ -18,8 +18,7 @@ let%expect_test "scalar_function_basic" =
       (* Register the function *)
       Duckdb.Scalar_function.register_exn double_function conn;
       (* Test the function *)
-      Duckdb.Query.run_exn conn "SELECT double_int(42)" ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+      Duckdb.Query.run_exn conn "SELECT double_int(42)" ~f:Test_helpers.print_result;
       [%expect
         {|
         ┌────────────────┐
@@ -46,8 +45,7 @@ let%expect_test "scalar_function_multiple_args" =
       (* Register the function *)
       Duckdb.Scalar_function.register_exn add_function conn;
       (* Test the function *)
-      Duckdb.Query.run_exn conn "SELECT add_ints(40, 2)" ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+      Duckdb.Query.run_exn conn "SELECT add_ints(40, 2)" ~f:Test_helpers.print_result;
       [%expect
         {|
         ┌─────────────────┐
@@ -74,8 +72,7 @@ let%expect_test "scalar_function_null_handling" =
       (* Register the function *)
       Duckdb.Scalar_function.register_exn handle_null_function conn;
       (* Test the function with NULL input *)
-      Duckdb.Query.run_exn conn "SELECT handle_null(NULL)" ~f:(fun res ->
-        Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+      Duckdb.Query.run_exn conn "SELECT handle_null(NULL)" ~f:Test_helpers.print_result;
       [%expect
         {|
         ┌───────────────────┐

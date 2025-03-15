@@ -6,12 +6,11 @@ open! Ctypes
 let%expect_test "integer_operations" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* No need to set single-threaded mode for this test *)
       (* Test basic integer operations *)
       Duckdb.Query.run_exn
         conn
         "SELECT 1 + 2 as add, 5 - 3 as sub, 4 * 2 as mul, 10 / 2 as div"
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        ~f:Test_helpers.print_result;
       [%expect
         {|
         ┌─────────┬─────────┬─────────┬────────┐
@@ -26,14 +25,13 @@ let%expect_test "integer_operations" =
 let%expect_test "float_operations" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* No need to set single-threaded mode for this test *)
       (* Test basic float operations *)
       (* TODO: Add support for decimal types in duckdb-ocaml *)
       Expect_test_helpers_core.require_does_raise ~hide_positions:true [%here] (fun () ->
         Duckdb.Query.run_exn
           conn
           "SELECT 1.5 + 2.5 as add, 5.5 - 3.2 as sub, 4.0 * 2.5 as mul, 10.0 / 2.0 as div"
-          ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline));
+          ~f:Test_helpers.print_result);
       [%expect
         {|
         ("Unsupported type" (
@@ -47,7 +45,6 @@ let%expect_test "float_operations" =
 let%expect_test "numeric_type_conversion" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* No need to set single-threaded mode for this test *)
       (* Test type conversions *)
       Duckdb.Query.run_exn
         conn
@@ -60,7 +57,7 @@ let%expect_test "numeric_type_conversion" =
           CAST(42 AS FLOAT) as float,
           CAST(42 AS DOUBLE) as double
         |}
-        ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
+        ~f:Test_helpers.print_result;
       [%expect
         {|
         ┌──────────┬───────────┬─────────┬─────────┬───────┬────────┐
@@ -75,7 +72,6 @@ let%expect_test "numeric_type_conversion" =
 let%expect_test "numeric_functions" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* No need to set single-threaded mode for this test *)
       (* Test numeric functions *)
       (* TODO: Add support for decimal types in duckdb-ocaml *)
       Expect_test_helpers_core.require_does_raise ~hide_positions:true [%here] (fun () ->
@@ -88,7 +84,7 @@ let%expect_test "numeric_functions" =
             FLOOR(42.9) as floor_val,
             CEILING(42.1) as ceil_val
           |}
-          ~f:(fun res -> Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline));
+          ~f:Test_helpers.print_result);
       [%expect
         {|
         ("Unsupported type" (

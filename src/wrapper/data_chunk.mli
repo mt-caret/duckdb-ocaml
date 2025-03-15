@@ -9,7 +9,7 @@ val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 val free : t -> here:Source_code_position.t -> unit
 
 (** Returns a human-readable string representation of the data chunk *)
-val to_string_hum : ?bars:[ `Ascii | `None | `Unicode ] -> column_count:int -> t -> string
+val to_string_hum : ?bars:[ `Ascii | `Unicode ] -> column_count:int -> t -> string
 
 module Private : sig
   val create : Duckdb_stubs.Data_chunk.t -> t
