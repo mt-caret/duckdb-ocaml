@@ -1,6 +1,7 @@
 open! Core
 open! Ctypes
 open Test_helpers
+open Duckdb
 
 (* Tests for Result_ module, mimicking DuckDB's result tests *)
 
