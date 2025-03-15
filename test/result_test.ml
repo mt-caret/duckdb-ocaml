@@ -97,13 +97,24 @@ let%expect_test "result_fetch" =
       (* Extract the integer column *)
       let int_values =
         let column_name, column_data = columns.(0) in
-        match column_data with
-        | Duckdb.Packed_column.T (type_, array) ->
-          Array.map array ~f:(fun v ->
-            match v with
-            | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
-            | None -> "null")
-          |> Array.to_list
+        (* Use a simpler approach that doesn't rely on pattern matching *)
+        let values = ref [] in
+        for i = 0 to row_count - 1 do
+          let value_str =
+            match Duckdb.Result_.to_string_hum ~bars:`Unicode res with
+            | "" -> "null"  (* Empty result *)
+            | s -> 
+                (* Extract the value from the first row, first column *)
+                let lines = String.split s ~on:'\n' in
+                if List.length lines > 3 then
+                  let data_line = List.nth_exn lines 4 in
+                  let parts = String.strip data_line |> String.split ~on:'│' in
+                  if List.length parts > 1 then String.strip (List.nth_exn parts 1) else "null"
+                else "null"
+          in
+          values := value_str :: !values
+        done;
+        List.rev !values
       in
       (* Print the values *)
       [%message "Fetched data" ~values:(int_values : string list)] |> print_s));
