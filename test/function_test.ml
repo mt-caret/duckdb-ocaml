@@ -1,7 +1,7 @@
 open! Core
 open! Ctypes
 
-(* Tests for Scalar_function module *)
+(* Tests for Scalar_function module, mimicking DuckDB's function tests *)
 
 let%expect_test "scalar_function_basic" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
