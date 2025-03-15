@@ -25,5 +25,5 @@ val fetch_all : t -> int * (string * Packed_column.t) array
 val to_string_hum : ?bars:[ `Ascii | `Unicode ] -> t -> string
 
 module Private : sig
-  val to_struct : 'a -> 'a
+  val get_exn : t -> Duckdb_stubs.Result.t structure Resource.t
 end

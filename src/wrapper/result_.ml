@@ -93,5 +93,5 @@ let to_string_hum ?(bars = `Unicode) t =
 ;;
 
 module Private = struct
-  let to_struct = Fn.id
+  let get_exn = Fn.id
 end
