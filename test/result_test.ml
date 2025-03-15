@@ -98,7 +98,7 @@ let%expect_test "result_fetch" =
       let int_values =
         let column_name, column_data = columns.(0) in
         match column_data with
-        | Packed_column.T (type_, array) ->
+        | Duckdb.Packed_column.T (type_, array) ->
           Array.map array ~f:(fun v ->
             match v with
             | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
