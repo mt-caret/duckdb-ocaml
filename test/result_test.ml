@@ -94,15 +94,16 @@ let%expect_test "result_fetch" =
       (* Use fetch_all instead of fetch to avoid resource management issues *)
       let row_count, columns = Duckdb.Result_.fetch_all res in
       (* Extract the integer column *)
+      (* Extract the integer column *)
       let int_values =
-        match columns.(0) with
-        | _, Duckdb.Packed_column.T (type_, array) ->
+        let column_name, column_data = columns.(0) in
+        match column_data with
+        | Packed_column.T (type_, array) ->
           Array.map array ~f:(fun v ->
             match v with
             | Some v -> Duckdb.Type.Typed.to_string_hum type_ v
             | None -> "null")
           |> Array.to_list
-        | _ -> []
       in
       (* Print the values *)
       [%message "Fetched data" ~values:(int_values : string list)] |> print_s));
