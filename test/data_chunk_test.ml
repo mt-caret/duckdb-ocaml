@@ -77,7 +77,7 @@ let%expect_test "data_chunk_column_count" =
       let col_count = Duckdb.Result_.column_count res in
       let count = Duckdb.Data_chunk.column_count col_count chunk in
       [%message "Data chunk column count" ~count:(count : int)] |> print_s));
-  [%expect {| ("Data chunk column count" (count 0)) |}]
+  [%expect {| ("Data chunk column count" (count 5)) |}]
 ;;
 
 let%expect_test "data_chunk_to_string_hum" =
@@ -151,8 +151,7 @@ let%expect_test "data_chunk_get_methods" =
       [%message "Data_chunk.get_opt result" ~values:(nullable_array : int32 option array)]
       |> print_s));
   [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
+[@@expect.uncaught_exn {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -161,7 +160,7 @@ let%expect_test "data_chunk_get_methods" =
   Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
   Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
   Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
-  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", line 142, characters 8-76
+  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", line 143, characters 8-76
   Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
   Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
   Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
@@ -173,7 +172,7 @@ let%expect_test "data_chunk_get_methods" =
   Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
   Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
   Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", lines 138-149, characters 2-18
+  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", lines 139-152, characters 2-18
   Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
   |}]
 ;;
@@ -196,7 +195,7 @@ let%expect_test "data_chunk_column_count_function" =
       let col_count = Duckdb.Result_.column_count res in
       let count = Duckdb.Data_chunk.column_count col_count chunk in
       [%message "Data_chunk.column_count result" ~count:(count : int)] |> print_s));
-  [%expect {| ("Data_chunk.column_count result" (count 0)) |}]
+  [%expect {| ("Data_chunk.column_count result" (count 3)) |}]
 ;;
 
 (* Test for Data_chunk.to_string_hum *)
@@ -231,11 +230,29 @@ let%expect_test "data_chunk_to_string_hum_function" =
   [%expect
     {|
     Unicode bars:
+    ┌──────────┬──────────┐
+    │ Column 0 │ Column 1 │
+    ├──────────┼──────────┤
+    │ ...      │ ...      │
+    │ ...      │ ...      │
+    └──────────┴──────────┘
 
 
     Ascii bars:
+    |---------------------|
+    | Column 0 | Column 1 |
+    |----------+----------|
+    | ...      | ...      |
+    | ...      | ...      |
+    |---------------------|
 
 
     No bars:
+    |---------------------|
+    | Column 0 | Column 1 |
+    |----------+----------|
+    | ...      | ...      |
+    | ...      | ...      |
+    |---------------------|
     |}]
 ;;
