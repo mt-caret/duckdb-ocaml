@@ -49,14 +49,7 @@ module F =
           @-> Duckdb_stubs.Vector.t
           @-> returning void))
 
-type t' =
-  { scalar_function : Duckdb_stubs.Scalar_function.t ptr
-  ; f : F.t
-  }
-
-type t = t' Resource.t
-
-let create_expert name types ~f =
+let create_expert_exn name types ~f ~conn =
   let scalar_function =
     allocate
       Duckdb_stubs.Scalar_function.t
@@ -87,32 +80,38 @@ let create_expert name types ~f =
   Duckdb_stubs.duckdb_scalar_function_set_function
     !@scalar_function
     (Ctypes.coerce F.t Duckdb_stubs.Scalar_function.function_ f);
-  Resource.create
-    { scalar_function; f }
-    ~name:"Duckdb.Function.Scalar"
-    ~free:(fun { scalar_function; f } ->
-      Duckdb_stubs.duckdb_destroy_scalar_function scalar_function;
-      F.free f)
+  let status =
+    Duckdb_stubs.duckdb_register_scalar_function
+      !@(Connection.Private.to_ptr conn |> Resource.get_exn)
+      !@scalar_function
+  in
+  Duckdb_stubs.duckdb_destroy_scalar_function scalar_function;
+  match status with
+  | DuckDBSuccess ->
+    let closure =
+      Resource.create f ~name:"Duckdb.Function.Scalar" ~free:(fun f -> F.free f)
+    in
+    let database = Connection.Private.database conn in
+    Database.Private.add_closure_root closure database
+  | DuckDBError ->
+    F.free f;
+    failwith "Failed to register scalar function"
 ;;
 
-let create (type a b) name (type_signature : (a, b) Signature.t) ~(f : a) =
+let create_exn (type a b) name (type_signature : (a, b) Signature.t) ~(f : a) ~conn =
   let return_type = Signature.returning_type type_signature in
-  create_expert name (Signature.to_untyped type_signature) ~f:(fun _info chunk output ->
-    let chunk = Data_chunk.Private.create_do_not_free chunk in
-    let argument_arrays = Argument_arrays.create type_signature chunk in
-    Array.init (Data_chunk.length chunk) ~f:(fun i ->
-      Argument_arrays.apply argument_arrays i ~f)
-    |> Vector.set_array output return_type)
-;;
-
-let register_exn t conn =
-  let t = Resource.get_exn t in
-  let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
-  match Duckdb_stubs.duckdb_register_scalar_function !@conn !@(t.scalar_function) with
-  | DuckDBSuccess -> ()
-  | DuckDBError -> failwith "Failed to register scalar function"
+  create_expert_exn
+    name
+    (Signature.to_untyped type_signature)
+    ~f:(fun _info chunk output ->
+      let chunk = Data_chunk.Private.create_do_not_free chunk in
+      let argument_arrays = Argument_arrays.create type_signature chunk in
+      Array.init (Data_chunk.length chunk) ~f:(fun i ->
+        Argument_arrays.apply argument_arrays i ~f)
+      |> Vector.set_array output return_type)
+    ~conn
 ;;
 
 module Expert = struct
-  let create = create_expert
+  let create_exn = create_expert_exn
 end

@@ -17,7 +17,7 @@ module Init_callback =
          (Duckdb_stubs.Init_info.t @-> returning void))
 
 let add name types ~bind ~init ~f ~conn =
-  let conn = Connection.Private.to_ptr conn |> Resource.get_exn in
+  let conn' = Connection.Private.to_ptr conn |> Resource.get_exn in
   let table_function =
     allocate Duckdb_stubs.Table_function.t (Duckdb_stubs.duckdb_create_table_function ())
   in
@@ -74,9 +74,25 @@ let add name types ~bind ~init ~f ~conn =
   Duckdb_stubs.duckdb_table_function_set_function
     !@table_function
     (Ctypes.coerce F.t Duckdb_stubs.Table_function.function_ f);
-  let status = Duckdb_stubs.duckdb_register_table_function !@conn !@table_function in
+  let status = Duckdb_stubs.duckdb_register_table_function !@conn' !@table_function in
   Duckdb_stubs.duckdb_destroy_table_function table_function;
   match status with
-  | DuckDBSuccess -> ()
-  | DuckDBError -> failwith "Failed to register table function"
+  | DuckDBSuccess ->
+    let database = Connection.Private.database conn in
+    Database.Private.add_closure_root
+      (Resource.create bind ~name:"Duckdb.Table_function.Bind_callback" ~free:(fun f ->
+         Bind_callback.free f))
+      database;
+    Database.Private.add_closure_root
+      (Resource.create init ~name:"Duckdb.Table_function.Init_callback" ~free:(fun f ->
+         Init_callback.free f))
+      database;
+    Database.Private.add_closure_root
+      (Resource.create f ~name:"Duckdb.Table_function" ~free:(fun f -> F.free f))
+      database
+  | DuckDBError ->
+    Bind_callback.free bind;
+    Init_callback.free init;
+    F.free f;
+    failwith "Failed to register table function"
 ;;

@@ -179,13 +179,11 @@ let%expect_test "scalar function registration" =
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "multiply_numbers_together"
-          (Small_int :: Small_int :: Returning Small_int)
-          ~f:( * )
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
+      Duckdb.Scalar_function.create_exn
+        "multiply_numbers_together"
+        (Small_int :: Small_int :: Returning Small_int)
+        ~f:( * )
+        ~conn;
       Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result;
       [%expect
         {|
@@ -203,13 +201,11 @@ let%expect_test "scalar function raises an exception" =
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "multiply_numbers_together"
-          (Small_int :: Small_int :: Returning Small_int)
-          ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
+      Duckdb.Scalar_function.create_exn
+        "multiply_numbers_together"
+        (Small_int :: Small_int :: Returning Small_int)
+        ~f:(fun _a _b -> raise_s [%message "This is a test exception"])
+        ~conn;
       Expect_test_helpers_core.require_does_raise [%here] (fun () ->
         Duckdb.Query.run_exn conn "SELECT multiply_numbers_together(2, 4)" ~f:print_result);
       [%expect
@@ -224,13 +220,11 @@ let%expect_test "scalar function string concatenation" =
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "string_concat"
-          (Var_char :: Var_char :: Returning Var_char)
-          ~f:( ^ )
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
+      Duckdb.Scalar_function.create_exn
+        "string_concat"
+        (Var_char :: Var_char :: Returning Var_char)
+        ~f:( ^ )
+        ~conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
       [%expect
         {|
@@ -248,13 +242,11 @@ let%expect_test "scalar function tupling" =
     Duckdb.Connection.with_connection db ~f:(fun conn ->
       (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
       Single_thread_fix.set_single_threaded conn;
-      let scalar_function =
-        Duckdb.Scalar_function.create
-          "string_concat"
-          (Var_char :: Var_char :: Returning (List Var_char))
-          ~f:(fun a b -> [ a; b ])
-      in
-      Duckdb.Scalar_function.register_exn scalar_function conn;
+      Duckdb.Scalar_function.create_exn
+        "string_concat"
+        (Var_char :: Var_char :: Returning (List Var_char))
+        ~f:(fun a b -> [ a; b ])
+        ~conn;
       Duckdb.Query.run_exn conn "SELECT string_concat('hello', ' world')" ~f:print_result;
       [%expect
         {|
@@ -401,5 +393,21 @@ let%expect_test "table function registration" =
         function is called
         function is called
         (rows (count 4000))
+        |}]);
+    (* Table function persists across connections *)
+    Duckdb.Connection.with_connection db ~f:(fun conn ->
+      Duckdb.Query.run_exn conn "SELECT * FROM my_function(1)" ~f:print_result;
+      [%expect
+        {|
+        bind is called
+        init is called
+        function is called
+        function is called
+        ┌───────────┐
+        │ forty_two │
+        │ Big_int   │
+        ├───────────┤
+        │ 42        │
+        └───────────┘
         |}]))
 ;;

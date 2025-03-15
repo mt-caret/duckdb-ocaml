@@ -6,13 +6,10 @@ module Signature : sig
     | ( :: ) : 'a Type.Typed_non_null.t * ('b, 'ret) t -> ('a -> 'b, 'ret) t
 end
 
-type t
-
-val create : string -> ('f, 'ret) Signature.t -> f:'f -> t
-val register_exn : t -> Connection.t -> unit
+val create_exn : string -> ('f, 'ret) Signature.t -> f:'f -> conn:Connection.t -> unit
 
 module Expert : sig
-  val create
+  val create_exn
     :  string
     -> Type.t list
     -> f:
@@ -20,5 +17,6 @@ module Expert : sig
           -> Duckdb_stubs.Data_chunk.t
           -> Duckdb_stubs.Vector.t
           -> unit)
-    -> t
+    -> conn:Connection.t
+    -> unit
 end

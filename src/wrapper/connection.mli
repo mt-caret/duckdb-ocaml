@@ -8,4 +8,5 @@ val with_connection : Database.t -> f:(t -> 'a) -> 'a
 
 module Private : sig
   val to_ptr : t -> Duckdb_stubs.Connection.t Ctypes.ptr Resource.t
+  val database : t -> Database.t
 end
