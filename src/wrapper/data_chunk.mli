@@ -6,7 +6,10 @@ val length : t -> int
 val get_exn : t -> 'a Type.Typed_non_null.t -> int -> 'a array
 val get_opt : t -> 'a Type.Typed.t -> int -> 'a option array
 val free : t -> here:Source_code_position.t -> unit
-val column_count : t -> int
+
+(** Returns the number of columns in the data chunk. If count is provided, uses that value.
+    Otherwise, determines the count by checking vectors. *)
+val column_count : ?count:int -> t -> int
 
 (** Returns a human-readable string representation of the data chunk *)
 val to_string_hum : ?bars:[ `Ascii | `None | `Unicode ] -> t -> string

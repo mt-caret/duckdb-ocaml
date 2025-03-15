@@ -29,20 +29,35 @@ let get_opt t type_ idx =
 
 let free t ~here = Resource.free t.data_chunk ~here
 
-let column_count t =
-  (* Count vectors by trying to access them until we get an exception *)
-  let rec count_vectors idx =
-    try
-      let _ =
-        Duckdb_stubs.duckdb_data_chunk_get_vector
-          !@(Resource.get_exn t.data_chunk)
-          (Unsigned.UInt64.of_int idx)
-      in
-      count_vectors (idx + 1)
-    with
-    | _ -> idx
-  in
-  count_vectors 0
+let column_count ?count t =
+  match count with
+  | Some c -> c
+  | None ->
+    (* Try to get the column count from DuckDB API if available *)
+    (* If not available, fall back to a more robust counting method *)
+    let max_columns = 100 in
+    (* Reasonable upper limit *)
+    let rec find_last_valid_column start end_idx =
+      if start > end_idx
+      then start - 1
+      else (
+        let mid = start + ((end_idx - start) / 2) in
+        try
+          let _ =
+            Duckdb_stubs.duckdb_data_chunk_get_vector
+              !@(Resource.get_exn t.data_chunk)
+              (Unsigned.UInt64.of_int mid)
+          in
+          (* This column exists, try higher *)
+          find_last_valid_column (mid + 1) end_idx
+        with
+        | _ ->
+          (* This column doesn't exist, try lower *)
+          find_last_valid_column start (mid - 1))
+    in
+    (* Start with binary search to find the last valid column *)
+    let result = find_last_valid_column 0 max_columns in
+    if result < 0 then 0 else result + 1
 ;;
 
 let to_string_hum ?(bars = `Unicode) t =
