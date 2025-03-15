@@ -10,7 +10,7 @@ module Delete_callback =
   (val Foreign.dynamic_funptr ~runtime_lock:true (ptr void @-> returning void))
 
 let add (db : Database.t) ~f =
-  let db = Database.Private.to_ptr db |> Resource.get_exn in
+  let db' = Database.Private.to_ptr db |> Resource.get_exn in
   let f =
     F.of_fun (fun info table_name _extra_data ->
       try f info ~table_name with
@@ -26,8 +26,17 @@ let add (db : Database.t) ~f =
   in
   let delete_callback = Delete_callback.of_fun (fun _ -> ()) in
   Duckdb_stubs.duckdb_add_replacement_scan
-    !@db
+    !@db'
     (Ctypes.coerce F.t Duckdb_stubs.Replacement_scan.callback f)
     None
-    (Ctypes.coerce Delete_callback.t Duckdb_stubs.Delete_callback.t delete_callback)
+    (Ctypes.coerce Delete_callback.t Duckdb_stubs.Delete_callback.t delete_callback);
+  Database.Private.add_closure_root
+    (Resource.create f ~name:"Duckdb.Replacement_scan" ~free:(fun f -> F.free f))
+    db;
+  Database.Private.add_closure_root
+    (Resource.create
+       delete_callback
+       ~name:"Duckdb.Replacement_scan.Delete_callback"
+       ~free:(fun f -> Delete_callback.free f))
+    db
 ;;
