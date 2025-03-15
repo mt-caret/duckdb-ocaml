@@ -1,5 +1,4 @@
 open! Core
-open! Ctypes
 
 type t
 
@@ -15,5 +14,5 @@ val to_string_hum : ?bars:[ `Ascii | `Unicode ] -> column_count:int -> t -> stri
 module Private : sig
   val create : Duckdb_stubs.Data_chunk.t -> t
   val create_do_not_free : Duckdb_stubs.Data_chunk.t -> t
-  val to_ptr : t -> Duckdb_stubs.Data_chunk.t ptr Resource.t
+  val to_ptr : t -> Duckdb_stubs.Data_chunk.t Ctypes.ptr Resource.t
 end
