@@ -1,6 +1,2 @@
 _build
 *.original
-*.backup
-*.fixed*
-*.new
-*.simplified
