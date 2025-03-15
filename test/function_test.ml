@@ -6,8 +6,7 @@ open! Ctypes
 let%expect_test "scalar_function_basic" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Create a simple scalar function that doubles an integer *)
       let double_function =
         Duckdb.Scalar_function.create
@@ -34,8 +33,7 @@ let%expect_test "scalar_function_basic" =
 let%expect_test "scalar_function_multiple_args" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Create a function that takes multiple arguments *)
       let add_function =
         Duckdb.Scalar_function.create
@@ -62,8 +60,7 @@ let%expect_test "scalar_function_multiple_args" =
 let%expect_test "scalar_function_null_handling" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Create a function that handles NULL values *)
       let handle_null_function =
         Duckdb.Scalar_function.create

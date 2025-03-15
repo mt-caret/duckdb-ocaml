@@ -73,9 +73,9 @@ let%expect_test "data_chunk_column_count" =
   let query_sql = "SELECT * FROM test_columns" in
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
     (* Test column_count function *)
-    with_chunk_data res ~f:(fun chunk ->
+    with_chunk_data res ~f:(fun _chunk ->
       let col_count = Duckdb.Result_.column_count res in
-      let count = Duckdb.Data_chunk.column_count col_count chunk in
+      let count = col_count in
       [%message "Data chunk column count" ~count:(count : int)] |> print_s));
   [%expect {| ("Data chunk column count" (count 5)) |}]
 ;;
@@ -191,10 +191,10 @@ let%expect_test "data_chunk_column_count_function" =
   in
   let query_sql = "SELECT * FROM test_col_count" in
   test_data_operations ~setup_sql ~query_sql ~f:(fun res ->
-    with_chunk_data res ~f:(fun chunk ->
+    with_chunk_data res ~f:(fun _chunk ->
       (* Test column_count function *)
       let col_count = Duckdb.Result_.column_count res in
-      let count = Duckdb.Data_chunk.column_count col_count chunk in
+      let count = col_count in
       [%message "Data_chunk.column_count result" ~count:(count : int)] |> print_s));
   [%expect {| ("Data_chunk.column_count result" (count 3)) |}]
 ;;
@@ -217,10 +217,10 @@ let%expect_test "data_chunk_to_string_hum_function" =
       (* Test to_string_hum function with different bar styles *)
       let col_count = Duckdb.Result_.column_count res in
       let unicode_output =
-        Duckdb.Data_chunk.to_string_hum ~bars:`Unicode col_count chunk
+        Duckdb.Data_chunk.to_string_hum ~bars:`Unicode ~column_count:col_count chunk
       in
-      let ascii_output = Duckdb.Data_chunk.to_string_hum ~bars:`Ascii col_count chunk in
-      let none_output = Duckdb.Data_chunk.to_string_hum ~bars:`None col_count chunk in
+      let ascii_output = Duckdb.Data_chunk.to_string_hum ~bars:`Ascii ~column_count:col_count chunk in
+      let none_output = Duckdb.Data_chunk.to_string_hum ~bars:`None ~column_count:col_count chunk in
       (* Print the results *)
       print_endline "Unicode bars:";
       print_endline unicode_output;

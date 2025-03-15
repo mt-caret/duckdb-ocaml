@@ -6,8 +6,7 @@ open! Ctypes
 let%expect_test "value_create_basic" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Create a scalar function that uses Value.create *)
       let scalar_function =
         Duckdb.Scalar_function.create
@@ -33,15 +32,11 @@ let%expect_test "value_create_basic" =
 let%expect_test "value_create_non_null" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Create a prepared statement that uses Value.create_non_null *)
-      let prepared =
-        Duckdb.Query.Prepared.create conn "SELECT ? + ?" |> Result.ok_or_failwith
-      in
+      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? + ?" in
       (* Bind values using Value.create_non_null internally *)
-      Duckdb.Query.Prepared.bind prepared [ Integer, 40l; Integer, 2l ]
-      |> Result.ok_or_failwith;
+      Duckdb.Query.Prepared.bind_exn prepared [ Integer, 40l; Integer, 2l ];
       (* Execute the prepared statement *)
       Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
         Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
@@ -61,16 +56,11 @@ let%expect_test "value_create_non_null" =
 let%expect_test "value_create_complex_types" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Test list values *)
-      let prepared =
-        Duckdb.Query.Prepared.create conn "SELECT ? as list_value"
-        |> Result.ok_or_failwith
-      in
+      let prepared = Duckdb.Query.Prepared.create_exn conn "SELECT ? as list_value" in
       (* Bind a list value *)
-      Duckdb.Query.Prepared.bind prepared [ List Integer, [ 1l; 2l; 3l; 4l; 5l ] ]
-      |> Result.ok_or_failwith;
+      Duckdb.Query.Prepared.bind_exn prepared [ List Integer, [ 1l; 2l; 3l; 4l; 5l ] ];
       (* Execute the prepared statement *)
       Duckdb.Query.Prepared.run_exn prepared ~f:(fun res ->
         Duckdb.Result_.to_string_hum res ~bars:`Unicode |> print_endline);
