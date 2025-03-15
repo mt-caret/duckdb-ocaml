@@ -5,8 +5,6 @@ type t
 
 val create : unit -> t
 val column_count : t -> int
-val column_name : t -> int -> string
-val column_type : t -> int -> Type.t
 val schema : t -> (string * Type.t) array
 val fetch : t -> f:(Data_chunk.t option -> 'a) -> 'a
 val fetch_all : t -> int * (string * Packed_column.t) array

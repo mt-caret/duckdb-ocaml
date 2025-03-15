@@ -6,8 +6,7 @@ open! Ctypes
 let%expect_test "integer_operations" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Test basic integer operations *)
       Duckdb.Query.run_exn
         conn
@@ -27,8 +26,7 @@ let%expect_test "integer_operations" =
 let%expect_test "float_operations" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Test basic float operations *)
       (* TODO: Add support for decimal types in duckdb-ocaml *)
       Expect_test_helpers_core.require_does_raise ~hide_positions:true [%here] (fun () ->
@@ -49,8 +47,7 @@ let%expect_test "float_operations" =
 let%expect_test "numeric_type_conversion" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Test type conversions *)
       Duckdb.Query.run_exn
         conn
@@ -78,8 +75,7 @@ let%expect_test "numeric_type_conversion" =
 let%expect_test "numeric_functions" =
   Duckdb.Database.with_path ":memory:" ~f:(fun db ->
     Duckdb.Connection.with_connection db ~f:(fun conn ->
-      (* Set DuckDB to single-threaded mode to avoid thread safety issues *)
-      Duckdb.Query.run_exn' conn "SET threads TO 1";
+      (* No need to set single-threaded mode for this test *)
       (* Test numeric functions *)
       (* TODO: Add support for decimal types in duckdb-ocaml *)
       Expect_test_helpers_core.require_does_raise ~hide_positions:true [%here] (fun () ->
