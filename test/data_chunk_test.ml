@@ -129,30 +129,7 @@ let%expect_test "data_chunk_get_methods" =
       |> print_s));
   [%expect.unreachable]
 [@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  ("Already freed" Duckdb.Data_chunk
-    (first_freed_at src/wrapper/result_.ml:49:71))
-  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
-  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
-  Called from Duckdb__Data_chunk.get_exn in file "src/wrapper/data_chunk.ml", line 14, characters 8-39
-  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", line 120, characters 8-76
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Duckdb__Query.run in file "src/wrapper/query.ml", lines 35-36, characters 4-70
-  Called from Duckdb__Query.run_exn in file "src/wrapper/query.ml", line 43, characters 2-19
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Base__Exn.protectx in file "src/exn.ml", line 79, characters 8-11
-  Re-raised at Base__Exn.raise_with_original_backtrace in file "src/exn.ml" (inlined), line 59, characters 2-50
-  Called from Base__Exn.protectx in file "src/exn.ml", line 86, characters 13-49
-  Called from Duckdb_test__Data_chunk_test.(fun) in file "test/data_chunk_test.ml", lines 116-129, characters 2-18
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
-  |}]
+  {| ("Already freed" Duckdb.Data_chunk (first_freed_at src/wrapper/result_.ml:49:71)) |}]
 ;;
 
 (* Test for Data_chunk.to_string_hum *)
