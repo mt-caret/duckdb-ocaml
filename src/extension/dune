@@ -1,0 +1,44 @@
+(executable
+ (name extension)
+ (libraries core)
+ (flags
+  (:standard -ccopt "-D DUCKDB_EXTENSION_NAME=ocaml_extension_test"))
+ (foreign_stubs
+  (language c)
+  (include_dirs ./duckdb_capi)
+  (names functions entrypoint))
+ (modes
+  (native shared_object)))
+
+; (library
+;  (public_name duckdb.extension_stubs)
+;  (name duckdb_extension_stubs)
+;  (libraries core)
+;  (inline_tests)
+;  (preprocess
+;   (pps ppx_jane))
+;  ; (foreign_stubs
+;  ;  (language c)
+;  ;  (include_dirs ./duckdb_capi)
+;  ;  (names entrypoint))
+;  (ctypes
+;   (external_library_name duckdb)
+;   (deps
+;    (glob_files ./duckdb_capi/*.h))
+;   (build_flags_resolver
+;    (vendored
+;     (c_flags :standard "-I./duckdb_capi")
+;     (c_library_flags :standard)))
+;   (headers
+;    (preamble
+;     "#include <duckdb_extension.h>\nDUCKDB_EXTENSION_EXTERN\nDUCKDB_EXTENSION_ENTRYPOINT(duckdb_connection connection, duckdb_extension_info info, struct duckdb_extension_access *access) { return true; }"))
+;   (type_description
+;    (instance Types)
+;    (functor Type_description))
+;   (function_description
+;    (concurrency unlocked)
+;    (instance Functions)
+;    (functor Function_description))
+;   (generated_types Types_generated)
+;   (generated_entry_point C)))
+; 
