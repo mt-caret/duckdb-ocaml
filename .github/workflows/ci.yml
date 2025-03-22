@@ -31,14 +31,15 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Install dependencies
+        env:
+          CFLAGS: ${{ runner.os == 'macOS' && '-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE' || '' }}
         run: |
           if [ "${{ runner.os }}" == "macOS" ]; then
             # Install macOS-specific dependencies if needed
             brew install ninja
             # Add pkg-config to resolve core_unix dependencies
             brew install pkg-config
-            # Configure C compiler flags for macOS socket options
-            export CFLAGS="-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE"
+            echo "Using CFLAGS: $CFLAGS"
           fi
           opam install . --deps-only --with-test
 
@@ -49,6 +50,8 @@ jobs:
         run: opam exec -- dune build @fmt
 
       - name: Build
+        env:
+          CFLAGS: ${{ runner.os == 'macOS' && '-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE' || '' }}
         run: opam exec -- dune build @default
 
       - name: Check for uncommitted changes after build
@@ -56,4 +59,6 @@ jobs:
           git diff --exit-code || (echo "Error: Build produced uncommitted changes. Run 'dune build @default' locally and commit the changes." && exit 1)
 
       - name: Run tests
+        env:
+          CFLAGS: ${{ runner.os == 'macOS' && '-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE' || '' }}
         run: opam exec -- dune build @runtest
