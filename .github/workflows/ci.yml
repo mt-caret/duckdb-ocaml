@@ -31,7 +31,12 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Install dependencies
-        run: opam install . --deps-only --with-test
+        run: |
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # Install macOS-specific dependencies if needed
+            brew install ninja
+          fi
+          opam install . --deps-only --with-test
 
       - name: Install ocamlformat
         run: opam install ocamlformat
