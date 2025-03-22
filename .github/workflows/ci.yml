@@ -35,6 +35,10 @@ jobs:
           if [ "${{ runner.os }}" == "macOS" ]; then
             # Install macOS-specific dependencies if needed
             brew install ninja
+            # Add pkg-config to resolve core_unix dependencies
+            brew install pkg-config
+            # Configure C compiler flags for macOS socket options
+            export CFLAGS="-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE"
           fi
           opam install . --deps-only --with-test
 
