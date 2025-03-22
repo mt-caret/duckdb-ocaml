@@ -40,6 +40,12 @@ jobs:
             # Set environment variables for macOS socket handling
             echo "CFLAGS=-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE" >> $GITHUB_ENV
             echo "Set CFLAGS for macOS in GITHUB_ENV"
+            # Create a wrapper script for C compiler to ensure flags are passed
+            echo '#!/bin/bash' > cc_wrapper.sh
+            echo 'cc $@ -DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE' >> cc_wrapper.sh
+            chmod +x cc_wrapper.sh
+            echo "CC=$PWD/cc_wrapper.sh" >> $GITHUB_ENV
+            echo "Created C compiler wrapper with socket flags"
           fi
           opam install . --deps-only --with-test
 
