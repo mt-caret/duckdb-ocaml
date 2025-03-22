@@ -38,32 +38,40 @@ let fetch (t : t) ~f =
            Data_chunk.Private.to_ptr data_chunk |> Resource.free ~here:[%here])
 ;;
 
-let fetch_all t =
-  (* TODO: This is super awkward... *)
-  let getters, collect =
+let fetch_all (t : t) =
+  let open struct
+    type t =
+      | T :
+          { name : string
+          ; type_ : 'a Type.Typed.t
+          ; mutable results : 'a option array list
+          }
+          -> t
+  end in
+  let results =
     schema t
-    |> Array.mapi ~f:(fun i (name, type_) ->
+    |> Array.map ~f:(fun (name, type_) ->
       match Type.Typed.of_untyped type_ with
       | None -> raise_s [%message "Unsupported type" (type_ : Type.t)]
-      | Some (T type_) ->
-        let result = ref [] in
-        ( (fun data_chunk -> result := Data_chunk.get_opt data_chunk type_ i :: !result)
-        , fun () -> name, Packed_column.T (type_, Array.concat (List.rev !result)) ))
-    |> Array.unzip
+      | Some (T type_) -> T { name; type_; results = [] })
   in
-  let rec go accum =
-    match
-      fetch t ~f:(function
-        | None -> None
-        | Some data_chunk ->
-          Array.iter getters ~f:(fun getter -> getter data_chunk);
-          Some (Data_chunk.length data_chunk))
-    with
-    | None -> accum
-    | Some n -> go (accum + n)
-  in
-  let total_length = go 0 in
-  total_length, Array.map collect ~f:(fun collect -> collect ())
+  let total_length = ref 0 in
+  while
+    match Duckdb_stubs.duckdb_fetch_chunk (Resource.get_exn t) with
+    | None -> false
+    | Some data_chunk ->
+      let data_chunk = Data_chunk.Private.create data_chunk in
+      total_length := !total_length + Data_chunk.length data_chunk;
+      Array.iteri results ~f:(fun i (T result) ->
+        result.results <- Data_chunk.get_opt data_chunk result.type_ i :: result.results);
+      Data_chunk.Private.to_ptr data_chunk |> Resource.free ~here:[%here];
+      true
+  do
+    ()
+  done;
+  ( !total_length
+  , Array.map results ~f:(fun (T { name; type_; results }) ->
+      name, Packed_column.T (type_, Array.concat (List.rev results))) )
 ;;
 
 let to_string_hum ?(bars = `Unicode) t =
