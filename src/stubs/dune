@@ -10,7 +10,7 @@
   (external_library_name duckdb)
   (build_flags_resolver
    (vendored
-    (c_flags :standard "-I../../vendor/duckdb/src/include")
+    (c_flags :standard "-I../../vendor/duckdb/src/include" "-DSO_NOSIGPIPE=1" "-DJSC_SO_NOSIGPIPE")
     (c_library_flags :standard -lstdc++)))
   (headers
    (include "duckdb.h"))

@@ -13,6 +13,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - macos-latest
         ocaml-compiler:
           - 5.3.0
 
@@ -30,7 +31,23 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Install dependencies
-        run: opam install . --deps-only --with-test
+        run: |
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # Install macOS-specific dependencies if needed
+            brew install ninja
+            # Add pkg-config to resolve core_unix dependencies
+            brew install pkg-config
+            # Set environment variables for macOS socket handling
+            echo "CFLAGS=-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE" >> $GITHUB_ENV
+            echo "Set CFLAGS for macOS in GITHUB_ENV"
+            # Create a wrapper script for C compiler to ensure flags are passed
+            echo '#!/bin/bash' > cc_wrapper.sh
+            echo 'cc $@ -DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE' >> cc_wrapper.sh
+            chmod +x cc_wrapper.sh
+            echo "CC=$PWD/cc_wrapper.sh" >> $GITHUB_ENV
+            echo "Created C compiler wrapper with socket flags"
+          fi
+          opam install . --deps-only --with-test
 
       - name: Install ocamlformat
         run: opam install ocamlformat
@@ -39,11 +56,21 @@ jobs:
         run: opam exec -- dune build @fmt
 
       - name: Build
-        run: opam exec -- dune build @default
+        run: |
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            CFLAGS="-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE" opam exec -- dune build @default
+          else
+            opam exec -- dune build @default
+          fi
 
       - name: Check for uncommitted changes after build
         run: |
           git diff --exit-code || (echo "Error: Build produced uncommitted changes. Run 'dune build @default' locally and commit the changes." && exit 1)
 
       - name: Run tests
-        run: opam exec -- dune build @runtest
+        run: |
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            CFLAGS="-DSO_NOSIGPIPE=1 -DJSC_SO_NOSIGPIPE" opam exec -- dune build @runtest
+          else
+            opam exec -- dune build @runtest
+          fi
